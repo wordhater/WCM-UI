@@ -1,7 +1,9 @@
-use gtk::glib::Char;
+use gtk::{glib::Char, Label};
 use gtk::prelude::*;
+use gio::{glib::clone, prelude::*};
 use std::{collections::LinkedList};
-use gtk::{glib, Application, ApplicationWindow, Button};
+use adw::Application;
+use gtk::{glib, Application as GTKApplication, ApplicationWindow, Button, SpinButton};
 
 const APP_ID: &str = "org.gtk_rs.WCM_UI";
 
@@ -86,7 +88,7 @@ fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String) -> Str
     }
 }
 
-fn main() -> glib::ExitCode {
+fn main()  -> glib::ExitCode {
     const TESTING: bool = true;
     // Setup chars
     let mut addCHARS:LinkedList<String> = LinkedList::new();
@@ -105,30 +107,77 @@ fn main() -> glib::ExitCode {
     }
     // Create a new application
 
+    // bootGUI();
     let app = Application::builder().application_id(APP_ID).build();
 
-    // Connect to "activate" signal of `app`
-    app.connect_activate(build_ui);
+    // // Connect to "activate" signal of `app`
+    app.connect_activate(bootGUI);
 
-    // Run the application
+    // // Run the application
     app.run()
+
 }
 
-fn build_ui(app: &Application) {
-    // Create a button
-    let button = Button::new();
-    button.set_margin_top(12);
-    button.set_margin_bottom(12);
-    button.set_margin_start(12);
-    button.set_margin_end(12);
-
-    // Create a window
-    let window = ApplicationWindow::builder()
-        .application(app)
-        .title("WCM UI")
-        .child(&button)
+fn bootGUI(app: &Application){
+    let gtk_box = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .build();
+    
+    let title = gtk::Label::builder()
+        .label("Word Count Modifier - UI")
+        .build();
+    let input_text = gtk::Text::builder()
+        .placeholder_text("Enter text here")
+        .margin_bottom(30)
+        .margin_top(10)
+        .margin_start(10)
+        .margin_end(10)
+        .build();
+    let output = gtk::Label::builder()
+        .selectable(true)
+        .build();
+    let word_count = gtk::Label::builder()
+        .label("Current Word Count: 0")
+        .build();
+    let count_input = gtk::Scale::builder()
+        .margin_end(50)
+        .margin_start(50)
+        .margin_bottom(10)
+        
         .build();
 
-    // Present window
-    window.present();
+    let apply_button = gtk::Button::builder()
+        .label("Apply")
+        .build();
+    gtk_box.append(&title);
+    gtk_box.append(&input_text);
+    gtk_box.append(&word_count);
+    gtk_box.append(&count_input);
+    gtk_box.append(&apply_button);
+    gtk_box.append(&output);
+    input_text.connect_changed(move |_text| {
+        if _text.text_length() == 0 {word_count.set_label("Current Word Count: 0");}else{
+            let mut lable: String = "Current Word Count: ".to_string();
+            lable.push_str(&count_words(&_text.text()).to_string());
+            word_count.set_label(&lable);
+        }
+    });
+
+    apply_button.connect_clicked(move |_button| {
+        println!("modify btn clicked");
+        if count_input.value() as i32 == 0{println!("no number input")}else{
+            let result = &modifywrapper(&input_text.text().to_string(), count_input.value() as i32, &"\u{2004}".to_string());
+            output.set_label(&result);
+        }
+    });
+    
+
+    let main_window = gtk::ApplicationWindow::builder()
+        .application(app)
+        .default_width(600)
+        .default_height(700)
+        .child(&gtk_box)
+        .title("WCM UI")
+        .build();
+    main_window.present();
 }
