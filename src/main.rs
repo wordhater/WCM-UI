@@ -1,12 +1,11 @@
 use gtk::{glib::Char, Label};
-use gtk::prelude::*;
+use gtk::{prelude::*, Separator};
 use gio::{glib::clone, prelude::*};
 use std::{collections::LinkedList};
 use adw::Application;
-use gtk::{glib, Application as GTKApplication, ApplicationWindow, Button, SpinButton};
+use gtk::{glib, Application as GTKApplication, ApplicationWindow, Button, SpinButton, Box};
 
 const APP_ID: &str = "org.gtk_rs.WCM_UI";
-
 
 
 // other functions
@@ -30,6 +29,9 @@ fn count_words(input: &str) -> i32 {
     return count;
 }
 
+fn is_all_numeric(s: &str) -> bool {
+    s.chars().all(|c| c.is_digit(10))
+}
 
 // Modify word count
 
@@ -122,39 +124,88 @@ fn bootGUI(app: &Application){
     let gtk_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .build();
+
+    // for some reason it errors if I create multiple instances on the same element in the view
+
+    let horizontal_separator_0 = gtk::Separator::builder()
+        .margin_top(5)
+        .margin_bottom(5)
+        .build();
+
+    let horizontal_separator_1 = gtk::Separator::builder()
+        .margin_top(5)
+        .margin_bottom(5)
+        .build();
+    let horizontal_separator_2 = gtk::Separator::builder()
+        .margin_top(5)
+        .margin_bottom(5)
+        .build();
+    let horizontal_separator_3 = gtk::Separator::builder()
+        .margin_top(5)
+        .margin_bottom(5)
+        .build();
+    let horizontal_separator_4 = gtk::Separator::builder()
+        .margin_top(5)
+        .margin_bottom(5)
+        .build();
     
     let title = gtk::Label::builder()
-        .label("Word Count Modifier - UI")
+        .label("Word Count Modifier UI")
+        .use_markup(true)
         .build();
+    title.set_markup("<span font=\"15\"><b>Word Count Modifier UI</b></span>");
+
     let input_text = gtk::Text::builder()
-        .placeholder_text("Enter text here")
+        .placeholder_text("Enter input text here")
         .margin_bottom(30)
         .margin_top(10)
         .margin_start(10)
         .margin_end(10)
         .build();
-    let output = gtk::Label::builder()
-        .selectable(true)
-        .build();
     let word_count = gtk::Label::builder()
         .label("Current Word Count: 0")
+        .margin_bottom(5)
+        .margin_top(5)
         .build();
-    let count_input = gtk::Scale::builder()
-        .margin_end(50)
-        .margin_start(50)
-        .margin_bottom(10)
-        
+
+    let count_input_label = gtk::Label::builder()
+        .label("Word Count Goal:")
+        .build();
+    let count_input = gtk::Entry::builder()
         .build();
 
     let apply_button = gtk::Button::builder()
         .label("Apply")
         .build();
+    let output = gtk::TextView::builder()
+        .wrap_mode(gtk::WrapMode::Word)
+        .build();
+    let output_title = Label::builder()
+        .label("Result:")
+        .use_markup(true)
+        .build();
+    output_title.set_markup("<span font=\"15\"><b> </b></span>");
+    // layouts
+    let row1 = Box::new(gtk::Orientation::Horizontal, 5);
+    row1.set_margin_top(5);
+    row1.set_margin_bottom(5);
+
+    row1.append(&count_input_label);
+    row1.append(&count_input);
+
     gtk_box.append(&title);
     gtk_box.append(&input_text);
+    gtk_box.append(&horizontal_separator_0);
     gtk_box.append(&word_count);
-    gtk_box.append(&count_input);
+    gtk_box.append(&horizontal_separator_1);
+    gtk_box.append(&row1);
+    gtk_box.append(&horizontal_separator_2);
     gtk_box.append(&apply_button);
+    gtk_box.append(&horizontal_separator_3);
+    gtk_box.append(&output_title);
     gtk_box.append(&output);
+
+    // Interaction
     input_text.connect_changed(move |_text| {
         if _text.text_length() == 0 {word_count.set_label("Current Word Count: 0");}else{
             let mut lable: String = "Current Word Count: ".to_string();
@@ -163,13 +214,11 @@ fn bootGUI(app: &Application){
         }
     });
 
-    apply_button.connect_clicked(move |_button| {
-        println!("modify btn clicked");
-        if count_input.value() as i32 == 0{println!("no number input")}else{
-            let result = &modifywrapper(&input_text.text().to_string(), count_input.value() as i32, &"\u{2004}".to_string());
-            output.set_label(&result);
-        }
+    count_input.connect_changed(|_count_input| {
+        println!("update")
     });
+
+
     
 
     let main_window = gtk::ApplicationWindow::builder()
@@ -179,5 +228,18 @@ fn bootGUI(app: &Application){
         .child(&gtk_box)
         .title("WCM UI")
         .build();
+
+    apply_button.connect_clicked(move |_button| {
+        println!("modify btn clicked");
+        if count_input.text().parse::<i32>().unwrap() as i32 == 0{println!("no number input")}else{
+            let result = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &"\u{2004}".to_string());
+            let markup = format!("{}", result);
+            output.buffer().set_text(&markup);
+            output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
+
+            // output.set_markup(&markup);
+            // gtk_box.append(&output);
+        }
+    });
     main_window.present();
 }
