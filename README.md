@@ -8,11 +8,14 @@ A Graphical user interface for Word count modifier, a script used to reduce to d
 
 libadwaita V-1.5
 
-gtk4
+gtk4 V-4.12
 
 ```bash
 cargo build
 ```
+
+[Additional notes for building for/on windows](https://gtk-rs.org/gtk4-rs/stable/latest/book/installation_windows.html)
+
 
 ## Known Issues
 
