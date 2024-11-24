@@ -10,6 +10,8 @@ libadwaita V-1.5
 
 gtk4 V-4.12
 
+clipboard V0.5.0
+
 ```bash
 cargo build
 ```

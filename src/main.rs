@@ -3,6 +3,7 @@ use gtk::{prelude::*, Separator};
 use gio::{glib::clone, prelude::*};
 use std::collections::linked_list::Iter;
 use std::{collections::LinkedList};
+use clipboard::{ClipboardProvider, ClipboardContext};
 use adw::Application;
 use gtk::{glib, ApplicationWindow, Button, SpinButton, Box};
 use std::rc::Rc;
@@ -102,13 +103,12 @@ fn main()  -> glib::ExitCode {
     addCHARS.push_back("TEST".to_string());//testing
     // Create a new application
 
-    // bootGUI();
     let app = Application::builder().application_id(APP_ID).build();
 
-    // // Connect to "activate" signal of `app`
+    // Connect to "activate" signal of `app`
     app.connect_activate(bootGUI);
 
-    // // Run the application
+    //Run the application
     app.run()
 
 }
@@ -200,9 +200,10 @@ fn bootGUI(app: &Application){
         // .group("yee")
         .build();
 
-    let charbuttons = Rc::new(RefCell::new(vec![char_btn_0.clone(), char_btn_1.clone(), char_btn_2.clone()]));
+    let charbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>> = Rc::new(RefCell::new(vec![char_btn_0.clone(), char_btn_1.clone(), char_btn_2.clone()]));
     char_btn_0.set_active(true);
     // layouts
+
     let row1: Box = Box::new(gtk::Orientation::Horizontal, 5);
     row1.set_margin_top(5);
     row1.set_margin_bottom(5);
@@ -219,18 +220,65 @@ fn bootGUI(app: &Application){
     row1.append(&count_input_label);
     row1.append(&count_input);
 
+    // tabs
+
+    let tabs: gtk::Notebook = gtk::Notebook::builder().build();
+    
+    let tab1_label: Label = Label::builder()
+        .label("Text")
+        .build();
+    let tab2_label: Label = Label::builder()
+        .label("Clipboard")
+        .build();
+    let tab1_content: Box = Box::new(gtk::Orientation::Vertical, 5);
+    let tab2_content: Box = Box::new(gtk::Orientation::Vertical, 5);
+
     gtk_box.append(&title);
     gtk_box.append(&charrow);
-    gtk_box.append(&input_text);
-    gtk_box.append(&horizontal_separator_0);
-    gtk_box.append(&word_count);
-    gtk_box.append(&horizontal_separator_1);
-    gtk_box.append(&row1);
-    gtk_box.append(&horizontal_separator_2);
-    gtk_box.append(&apply_button);
-    gtk_box.append(&horizontal_separator_3);
-    gtk_box.append(&output_title);
-    gtk_box.append(&output);
+
+    tab1_content.append(&input_text);
+    tab1_content.append(&horizontal_separator_0);
+    tab1_content.append(&word_count);
+    tab1_content.append(&horizontal_separator_1);
+    tab1_content.append(&row1);
+    tab1_content.append(&horizontal_separator_2);
+    tab1_content.append(&apply_button);
+    tab1_content.append(&horizontal_separator_3);
+    tab1_content.append(&output_title);
+    tab1_content.append(&output);
+    
+    // Clipboard menu contents
+
+    let getbtn = Button::builder()
+        .label("Get clipboard contents")
+        .build();
+    let sucessindicator = Label::builder()
+        .label("No loaded clipboard contents")
+        .tooltip_text("yee")
+        // .has_tooltip(false)
+        .build();
+    let count_input_clip: gtk::Entry = gtk::Entry::builder()
+        .build();
+    let count_input_label_clip: Label = gtk::Label::builder()
+        .label("Word Count Goal:")
+        .build();
+
+    let row2: Box = Box::new(gtk::Orientation::Horizontal, 5);
+    row2.set_margin_top(5);
+    row2.set_margin_bottom(5);
+
+    row2.append(&count_input_label_clip);
+    row2.append(&count_input_clip);
+
+    tab2_content.append(&getbtn);
+    tab2_content.append(&sucessindicator);
+    tab2_content.append(&horizontal_separator_4);
+    tab2_content.append(&row2);
+
+    tabs.append_page(&tab1_content, Some(&tab1_label));
+    tabs.append_page(&tab2_content, Some(&tab2_label));
+
+    gtk_box.append(&tabs);
 
     // Interaction
     input_text.connect_changed(move |_text: &gtk::Text| {
@@ -243,19 +291,22 @@ fn bootGUI(app: &Application){
     });
 
     // jank method of ensuring count input is a number
-    count_input.connect_changed(|_count_input: &gtk::Entry| {
-        println!("update");
-        let mut text: &str = &_count_input.text().to_string();
-        if text.chars().all(char::is_numeric){
-            println!("all numbers")
-        }else{
-            println!("letters detected");
-            let mut output: String = text.to_string();
-            output.pop();
-            println!("{}", output);
-            _count_input.set_text(&output);
-        }
-    });
+    let num_inputs: Rc<RefCell<Vec<gtk::Entry>>> = Rc::new(RefCell::new(vec![count_input.clone(), count_input_clip.clone()]));
+    for _input in num_inputs.borrow().iter()  {
+        _input.connect_changed(|_count_input: &gtk::Entry| {
+            println!("update");
+            let mut text: &str = &_count_input.text().to_string();
+            if text.chars().all(char::is_numeric){
+                println!("all numbers")
+            }else{
+                println!("letters detected");
+                let mut output: String = text.to_string();
+                output.pop();
+                println!("{}", output);
+                _count_input.set_text(&output);
+            }
+        });
+    }
     // toggle controller - this never worked
     // for button in charbuttons.borrow().iter() {
     //     let charbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>> = Rc::clone(&charbuttons);
@@ -269,6 +320,25 @@ fn bootGUI(app: &Application){
     //         } else{println!("deactivate")}
     //     });
     // }
+
+    // clipboard
+    getbtn.connect_clicked(move |_getbtn| {
+        let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+        let potential_clipboardcontent: Result<String, std::prelude::v1::Box<dyn std::error::Error>> = ctx.get_contents();
+        match potential_clipboardcontent {
+            Ok(content) => {
+                let clipcount: i32 = count_words(&content);
+                println!("Clipboard content has {} words.", clipcount);
+                sucessindicator.set_label(&format!("Clipboard contains {} words", clipcount));
+                sucessindicator.set_tooltip_text(Some(&content));
+
+            }
+            Err(error) => {
+                println!("Error getting clipboard content: {}", error);
+                sucessindicator.set_label("Error occurred when reading clipboard contents");
+            }
+        }
+    });
 
     let main_window: ApplicationWindow = gtk::ApplicationWindow::builder()
         .application(app)
