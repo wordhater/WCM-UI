@@ -1,11 +1,10 @@
-use gtk::{glib::Char, Label};
-use gtk::{prelude::*, Separator};
-use gio::{glib::clone, prelude::*};
+use gtk::{Label};
+use gtk::{prelude::*};
 use std::collections::linked_list::Iter;
 use std::{collections::LinkedList};
 use clipboard::{ClipboardProvider, ClipboardContext};
 use adw::Application;
-use gtk::{glib, ApplicationWindow, Button, SpinButton, Box};
+use gtk::{glib, ApplicationWindow, Button, Box};
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -34,6 +33,33 @@ fn count_words(input: &str) -> i32 {
 
 fn is_all_numeric(s: &str) -> bool {
     s.chars().all(|c| c.is_digit(10))
+}
+
+fn getcharmode(charbuttons:  Rc<RefCell<Vec<gtk::ToggleButton>>>) -> String{
+    // get selected char
+    let mut sel: String = "".to_string();
+    for button in charbuttons.borrow().iter() {
+        if button.is_active(){
+            let label: &str = match button.label() {
+                Some(formatted) => &formatted.clone(),
+                None => "null",
+            };
+            // add extra chars here
+            if label == "U+205F"{
+                sel = "\u{205f}".to_string();
+                break
+            }
+            if label == "U+2004"{
+                sel = "\u{2004}".to_string();
+                break
+            }
+            if label == "_"{
+                sel = "_".to_string();
+                break
+            }
+        }
+    }
+    return sel;
 }
 
 // Modify word count
@@ -115,7 +141,7 @@ fn main()  -> glib::ExitCode {
 
 fn bootGUI(app: &Application){
 
-    let gtk_box = gtk::Box::builder()
+    let gtk_box: Box = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .build();
 
@@ -142,39 +168,51 @@ fn bootGUI(app: &Application){
         .margin_top(5)
         .margin_bottom(5)
         .build();
+    let horizontal_separator_5 = gtk::Separator::builder()
+        .margin_top(5)
+        .margin_bottom(5)
+        .build();
+    let horizontal_separator_6 = gtk::Separator::builder()
+        .margin_top(5)
+        .margin_bottom(5)
+        .build();
+    let horizontal_separator_7 = gtk::Separator::builder()
+        .margin_top(5)
+        .margin_bottom(5)
+        .build();
     
-    let title = gtk::Label::builder()
+    let title: Label = gtk::Label::builder()
         .label("Word Count Modifier UI")
         .use_markup(true)
         .build();
     title.set_markup("<span font=\"15\"><b>Word Count Modifier UI</b></span>");
 
-    let input_text = gtk::Text::builder()
+    let input_text: gtk::Text = gtk::Text::builder()
         .placeholder_text("Enter input text here")
         .margin_bottom(30)
         .margin_top(10)
         .margin_start(10)
         .margin_end(10)
         .build();
-    let word_count = gtk::Label::builder()
+    let word_count: Label = gtk::Label::builder()
         .label("Current Word Count: 0")
         .margin_bottom(5)
         .margin_top(5)
         .build();
 
-    let count_input_label = gtk::Label::builder()
+    let count_input_label: Label = gtk::Label::builder()
         .label("Word Count Goal:")
         .build();
-    let count_input = gtk::Entry::builder()
+    let count_input: gtk::Entry = gtk::Entry::builder()
         .build();
 
-    let apply_button = gtk::Button::builder()
+    let apply_button: Button = gtk::Button::builder()
         .label("Apply")
         .build();
-    let output = gtk::TextView::builder()
+    let output: gtk::TextView = gtk::TextView::builder()
         .wrap_mode(gtk::WrapMode::Word)
         .build();
-    let output_title = Label::builder()
+    let output_title: Label = Label::builder()
         .label("Result:")
         .use_markup(true)
         .build();
@@ -184,18 +222,18 @@ fn bootGUI(app: &Application){
 
 
     // char buttons
-    let char_label =  Label::builder()
+    let char_label: Label =  Label::builder()
         .label("Char selection (SELECT ONLY ONE AT A TIME): ")
         .build();
-    let char_btn_0 = gtk::ToggleButton::builder()
+    let char_btn_0: gtk::ToggleButton = gtk::ToggleButton::builder()
         .label("U+205F")
         .build();
 
-    let char_btn_1 = gtk::ToggleButton::builder()
+    let char_btn_1: gtk::ToggleButton = gtk::ToggleButton::builder()
         .label("U+2004")
         .build();
 
-    let char_btn_2 = gtk::ToggleButton::builder()
+    let char_btn_2: gtk::ToggleButton = gtk::ToggleButton::builder()
         .label("_")
         // .group("yee")
         .build();
@@ -249,10 +287,11 @@ fn bootGUI(app: &Application){
     
     // Clipboard menu contents
 
-    let getbtn = Button::builder()
+    let getbtn: Button = Button::builder()
         .label("Get clipboard contents")
+        .margin_top(10)
         .build();
-    let sucessindicator = Label::builder()
+    let sucessindicator: Label = Label::builder()
         .label("No loaded clipboard contents")
         .tooltip_text("yee")
         // .has_tooltip(false)
@@ -262,7 +301,20 @@ fn bootGUI(app: &Application){
     let count_input_label_clip: Label = gtk::Label::builder()
         .label("Word Count Goal:")
         .build();
+    let apply_button_clip: Button = gtk::Button::builder()
+        .label("Apply")
+        .build();
+    let output_title_clip: Label = Label::builder()
+        .label("Result:")
+        .use_markup(true)
+        .tooltip_text("nothing yet")
+        .build();
 
+    let copy_result_btn: gtk::Button = gtk::Button::builder()
+        .label("Copy result to clipboard")
+        .build();
+
+    output_title_clip.set_markup("<span font=\"15\"><b> </b></span>");
     let row2: Box = Box::new(gtk::Orientation::Horizontal, 5);
     row2.set_margin_top(5);
     row2.set_margin_bottom(5);
@@ -274,6 +326,12 @@ fn bootGUI(app: &Application){
     tab2_content.append(&sucessindicator);
     tab2_content.append(&horizontal_separator_4);
     tab2_content.append(&row2);
+    tab2_content.append(&horizontal_separator_5);
+    tab2_content.append(&apply_button_clip);
+    tab2_content.append(&output_title_clip);
+    tab2_content.append(&horizontal_separator_6);
+    tab2_content.append(&copy_result_btn);
+    
 
     tabs.append_page(&tab1_content, Some(&tab1_label));
     tabs.append_page(&tab2_content, Some(&tab2_label));
@@ -322,7 +380,10 @@ fn bootGUI(app: &Application){
     // }
 
     // clipboard
-    getbtn.connect_clicked(move |_getbtn| {
+
+    let sucessindicator2: Label = sucessindicator.clone();
+    
+    getbtn.connect_clicked(move |_getbtn: &Button| {
         let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
         let potential_clipboardcontent: Result<String, std::prelude::v1::Box<dyn std::error::Error>> = ctx.get_contents();
         match potential_clipboardcontent {
@@ -347,38 +408,38 @@ fn bootGUI(app: &Application){
         .child(&gtk_box)
         .title("WCM UI")
         .build();
+    
+    let charbuttons2: Rc<RefCell<Vec<gtk::ToggleButton>>> = charbuttons.clone();
 
-    apply_button.connect_clicked(move |_button| {
+    apply_button.connect_clicked(move |_button: &Button| {
         println!("modify btn clicked");
         if count_input.text().parse::<i32>().unwrap() as i32 == 0{println!("no number input")}else{
-            let mut char = "".to_string();
-            // get selected char
-            for button in charbuttons.borrow().iter() {
-                if button.is_active(){
-                    let label: &str = match button.label() {
-                        Some(formatted) => &formatted.clone(),
-                        None => "null",
-                    };
-                    // add extra chars here
-                    if label == "U+205F"{
-                        char = "\u{205f}".to_string();
-                        break
-                    }
-                    if label == "U+2004"{
-                        char = "\u{2004}".to_string();
-                        break
-                    }
-                    if label == "_"{
-                        char = "_".to_string();
-                        break
-                    }
-                }
-            }
-            let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &char);
+            let selected: String = getcharmode(charbuttons.clone());
+            let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected);
             let markup: String = format!("{}", result);
             output.buffer().set_text(&markup);
             output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
         }
+    });
+    let output_title_clip2: Label = output_title_clip.clone();
+    apply_button_clip.connect_clicked(move |_button: &Button|{
+        println!("mod clip");
+        if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{println!("no number")}else{
+            let selected: String = getcharmode(charbuttons2.clone());
+            let result: &String = &modifywrapper(&sucessindicator2.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected);
+            output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
+            output_title_clip.set_tooltip_text(Some(&result));
+        }
+    });
+
+    // copy btn
+    copy_result_btn.connect_clicked(move |_btn|{
+        let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+        let text: &str = match output_title_clip2.tooltip_text() {
+            Some(formatted) => &formatted.clone(),
+            None => "null",
+        };
+        ctx.set_contents(text.to_owned()).unwrap();
     });
     main_window.present();
 }
