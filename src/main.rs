@@ -105,14 +105,46 @@ fn decrease<'a>(input: &'a str, goal: i32, replacement: &'a str) -> String{
     return output;
 }
 
+// increase
+fn increase<'a>(input: &'a str, goal: i32) -> String {
+    let incchar: String = "\u{2061}".to_string();
+    let parts: std::str::Split<'_, &str> = input.split("");
+    let mut charcount: i32 = input.len() as i32;
+    let mut charlist = LinkedList::new();
+    let mut index: i32 = 0;
+    for part in parts{
+        if index != 0 {if index != charcount+1{
+            println!("e:{}", part);
+            charlist.push_back(part.to_string());
+        }}
+        index += 1;
+
+    }
+    let addition: i32 = goal-count_words(input);
+    if addition > charlist.len() as i32{println!("ok buddy that's too much of an increase");}else{
+        let rate: f64 = charlist.len()as f64/addition as f64;
+        let mut output: String = String::new();
+        index = 0;
+        for char in charlist{
+            output.push_str(&char);
+            if index as f64 % rate == 0.0{
+                output.push_str(&incchar);
+            }
+            index += 1
+        }
+        return output;
+    }
+    return input.to_string();
+}
+
 fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String) -> String {
     let init_count: i32 = count_words(input);
     if init_count > count{
         println!("Decrease requested");
         return decrease(input, count, replacement);
     }else if init_count < count {
-        println!("increase requested - unsupported");
-        return "null".to_string();
+        println!("increase requested");
+        return increase(input, count, );
     } else{
         println!("NO difference...");
         return input.to_string();
@@ -120,23 +152,13 @@ fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String) -> Str
 }
 
 fn main()  -> glib::ExitCode {
-    // Setup chars
-    let mut addCHARS:LinkedList<String> = LinkedList::new();
-    addCHARS.push_back("\u{2000}".to_string());
-    addCHARS.push_back("\u{2002}".to_string());
-    addCHARS.push_back("\u{205f}".to_string());//best
-    addCHARS.push_back("\u{2004}".to_string());//potential inconsistency
-    addCHARS.push_back("TEST".to_string());//testing
-    // Create a new application
-
-    let app = Application::builder().application_id(APP_ID).build();
+    let app: Application = Application::builder().application_id(APP_ID).build();
 
     // Connect to "activate" signal of `app`
     app.connect_activate(bootGUI);
 
     //Run the application
     app.run()
-
 }
 
 fn bootGUI(app: &Application){
