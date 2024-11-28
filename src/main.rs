@@ -31,6 +31,18 @@ fn count_words(input: &str) -> i32 {
     return count;
 }
 
+fn count_words_inc_increase(input: &str) -> i32 {
+    let parts: std::str::Split<'_, &str> = input.split(" ");
+    let mut count: i32 = 0;
+    let mut modlist: LinkedList<String> = LinkedList::new();
+    for part in parts{
+        for segment in part.split("\u{205f}"){
+            count += 1;
+        }
+    }
+    return count;
+}
+
 fn is_all_numeric(s: &str) -> bool {
     s.chars().all(|c| c.is_digit(10))
 }
@@ -107,10 +119,11 @@ fn decrease<'a>(input: &'a str, goal: i32, replacement: &'a str) -> String{
 
 // increase
 fn increase<'a>(input: &'a str, goal: i32) -> String {
+    let mode = "prior";
     let incchar: String = "\u{2061}".to_string();
     let parts: std::str::Split<'_, &str> = input.split("");
-    let mut charcount: i32 = input.len() as i32;
-    let mut charlist = LinkedList::new();
+    let charcount: i32 = input.len() as i32;
+    let mut charlist: LinkedList<String> = LinkedList::new();
     let mut index: i32 = 0;
     for part in parts{
         if index != 0 {if index != charcount+1{
@@ -121,17 +134,32 @@ fn increase<'a>(input: &'a str, goal: i32) -> String {
 
     }
     let addition: i32 = goal-count_words(input);
-    if addition > charlist.len() as i32{println!("ok buddy that's too much of an increase");}else{
-        let rate: f64 = charlist.len()as f64/addition as f64;
-        let mut output: String = String::new();
-        index = 0;
-        for char in charlist{
-            output.push_str(&char);
-            if index as f64 % rate == 0.0{
-                output.push_str(&incchar);
+    // hidden mode
+    if mode == "hidden"{
+        if addition > charlist.len() as i32{println!("ok buddy that's too much of an increase");}else{
+            let rate: f64 = charlist.len()as f64/addition as f64;
+            let mut output: String = String::new();
+            index = 0;
+            for char in charlist{
+                println!("yee");
+                output.push_str(&char);
+                if index % rate as i32 == 0{
+                    println!("increase");
+                    output.push_str(&"\u{2061}");
+                    println!("{}", output)
+                }
+                index += 1
             }
-            index += 1
+            return output;
         }
+    } else if mode == "prior" {
+        let mut output: String = "".to_string();
+        for i in 1..addition{
+            output.push_str("\u{3164} ");
+            println!("char")
+        }
+        output.push_str("\u{000D}");
+        output.push_str(&input);
         return output;
     }
     return input.to_string();
@@ -143,8 +171,8 @@ fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String) -> Str
         println!("Decrease requested");
         return decrease(input, count, replacement);
     }else if init_count < count {
-        println!("increase requested");
-        return increase(input, count, );
+        println!("increase requested very broken");
+        return increase(input, count);
     } else{
         println!("NO difference...");
         return input.to_string();
@@ -195,10 +223,6 @@ fn bootGUI(app: &Application){
         .margin_bottom(5)
         .build();
     let horizontal_separator_6 = gtk::Separator::builder()
-        .margin_top(5)
-        .margin_bottom(5)
-        .build();
-    let horizontal_separator_7 = gtk::Separator::builder()
         .margin_top(5)
         .margin_bottom(5)
         .build();
@@ -410,7 +434,7 @@ fn bootGUI(app: &Application){
         let potential_clipboardcontent: Result<String, std::prelude::v1::Box<dyn std::error::Error>> = ctx.get_contents();
         match potential_clipboardcontent {
             Ok(content) => {
-                let clipcount: i32 = count_words(&content);
+                let clipcount: i32 = count_words_inc_increase(&content);
                 println!("Clipboard content has {} words.", clipcount);
                 sucessindicator.set_label(&format!("Clipboard contains {} words", clipcount));
                 sucessindicator.set_tooltip_text(Some(&content));
@@ -440,7 +464,7 @@ fn bootGUI(app: &Application){
             let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected);
             let markup: String = format!("{}", result);
             output.buffer().set_text(&markup);
-            output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
+            output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words_inc_increase(result)));
         }
     });
     let output_title_clip2: Label = output_title_clip.clone();
@@ -449,7 +473,7 @@ fn bootGUI(app: &Application){
         if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{println!("no number")}else{
             let selected: String = getcharmode(charbuttons2.clone());
             let result: &String = &modifywrapper(&sucessindicator2.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected);
-            output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
+            output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words_inc_increase(result)));
             output_title_clip.set_tooltip_text(Some(&result));
         }
     });
