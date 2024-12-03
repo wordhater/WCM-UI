@@ -89,9 +89,10 @@ fn decrease<'a>(input: &'a str, goal: i32, replacement: &'a str) -> String{
     let diff: i32 = words.len() as i32 - goal;
     if goal >= init_count/2 {
         let rate: f32 = (words.len() as f32 -1.0)/diff as f32;
+        println!("rate: {}", rate);
         for i in 1..init_count{
             output.push_str(&get_item_by_index_str(&words, i as usize));
-            if i % rate as i32 == 0 {
+            if i as f32 % rate >= 0.0 {
                 output.push_str(replacement);
             }else {
                 output.push_str(" ");
@@ -464,7 +465,7 @@ fn bootGUI(app: &Application){
             let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected);
             let markup: String = format!("{}", result);
             output.buffer().set_text(&markup);
-            output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words_inc_increase(result)));
+            output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
         }
     });
     let output_title_clip2: Label = output_title_clip.clone();
@@ -473,7 +474,7 @@ fn bootGUI(app: &Application){
         if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{println!("no number")}else{
             let selected: String = getcharmode(charbuttons2.clone());
             let result: &String = &modifywrapper(&sucessindicator2.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected);
-            output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words_inc_increase(result)));
+            output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
             output_title_clip.set_tooltip_text(Some(&result));
         }
     });
