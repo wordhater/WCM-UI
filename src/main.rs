@@ -1,6 +1,7 @@
 use gtk::{Label};
 use gtk::{prelude::*};
 use std::collections::linked_list::Iter;
+use std::ptr::null;
 use std::{collections::LinkedList};
 use clipboard::{ClipboardProvider, ClipboardContext};
 use adw::Application;
@@ -78,44 +79,63 @@ fn getcharmode(charbuttons:  Rc<RefCell<Vec<gtk::ToggleButton>>>) -> String{
 
 
 // decrease
-fn decrease<'a>(input: &'a str, goal: i32, replacement: &'a str) -> String{
+// fn decrease<'a>(input: &'a str, goal: i32, replacement: &'a str) -> String{
+//     let init_count: i32 = count_words(input);
+//     let parts: std::str::Split<'_, &str> = input.split(" ");
+//     let mut words:LinkedList<String> = LinkedList::new();
+//     for part in parts{
+//         words.push_back(part.to_string());
+//     }
+//     let mut output: String = "".to_string();
+//     let diff: i32 = words.len() as i32 - goal;
+//     if goal >= init_count/2 {
+//         let rate: f32 = (words.len() as f32 -1.0)/diff as f32;
+//         println!("rate: {}", rate);
+//         for i in 1..init_count{
+//             output.push_str(&get_item_by_index_str(&words, i as usize));
+//             if i as f32 % rate >= 0.0 {
+//                 output.push_str(replacement);
+//             }else {
+//                 output.push_str(" ");
+//             }
+//         }
+//     }else{
+//         println!("less than half");
+//         let spacerate: f32 = ((init_count -1)/(init_count - diff)) as f32 /4.0;
+//         //+ ((init_count -1) % (init_count - diff)) as f32 /4.0)
+//         for i in 1..init_count{
+//             output.push_str(&get_item_by_index_str(&words, i as usize));
+//             println!("rate: {}", spacerate);
+//             println!("words: {}", init_count);
+//             if i as f32 % spacerate == 0.0 {
+//                 output.push_str(" ");
+//                 println!("space")
+//             }else {
+//                 println!("char");
+//                 output.push_str(replacement);
+//             }
+//         }
+//     }
+//     return output;
+// }
+
+fn decrease<'a>(input: &'a  str, goal: i32, replacement: &'a str) -> String{
     let init_count: i32 = count_words(input);
     let parts: std::str::Split<'_, &str> = input.split(" ");
     let mut words:LinkedList<String> = LinkedList::new();
-    for part in parts{
-        words.push_back(part.to_string());
-    }
+    for part in parts{words.push_back(part.to_string());}
+    let totaldiff: i32 = init_count - goal;
+    let rate: i32 = ((init_count as f32 -1.0)/totaldiff as f32).ceil() as i32;
     let mut output: String = "".to_string();
-    let diff: i32 = words.len() as i32 - goal;
     if goal >= init_count/2 {
-        let rate: f32 = (words.len() as f32 -1.0)/diff as f32;
-        println!("rate: {}", rate);
-        for i in 1..init_count{
+        for i in 0..init_count{
             output.push_str(&get_item_by_index_str(&words, i as usize));
-            if i as f32 % rate >= 0.0 {
-                output.push_str(replacement);
-            }else {
-                output.push_str(" ");
-            }
         }
     }else{
-        println!("less than half");
-        let spacerate: f32 = ((init_count -1)/(init_count - diff)) as f32 /4.0;
-        //+ ((init_count -1) % (init_count - diff)) as f32 /4.0)
-        for i in 1..init_count{
-            output.push_str(&get_item_by_index_str(&words, i as usize));
-            println!("rate: {}", spacerate);
-            println!("words: {}", init_count);
-            if i as f32 % spacerate == 0.0 {
-                output.push_str(" ");
-                println!("space")
-            }else {
-                println!("char");
-                output.push_str(replacement);
-            }
-        }
+        println!("too low for formula to work")
     }
-    return output;
+    return "null".to_string();
+
 }
 
 // increase
