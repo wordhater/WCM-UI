@@ -32,6 +32,13 @@ fn count_words(input: &str) -> i32 {
     return count;
 }
 
+fn modulus_i32(a: i32, b: i32) -> bool{
+    println!("result: {}", (((a % b) + b) % b));
+    if ((a % b) + b) % b == 0{
+        return true;
+    }else{return false;}
+}
+
 fn count_words_inc_increase(input: &str) -> i32 {
     let parts: std::str::Split<'_, &str> = input.split(" ");
     let mut count: i32 = 0;
@@ -130,7 +137,13 @@ fn decrease<'a>(input: &'a  str, goal: i32, replacement: &'a str) -> String{
     if goal >= init_count/2 {
         for i in 0..init_count{
             output.push_str(&get_item_by_index_str(&words, i as usize));
+            if modulus_i32(i, rate){
+                output.push_str(replacement);
+            }else{
+                output.push_str(" ");
+            }
         }
+        return output;
     }else{
         println!("too low for formula to work")
     }
