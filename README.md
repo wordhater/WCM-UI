@@ -24,3 +24,5 @@ cargo build
 reduction algorithms don't make use of floats reducing accuracy on larger pieces of text
 
 under seemingly random circumstances the code will return an unchanged word count or a word count of 0
+
+need a better solution for increase... and decrease
