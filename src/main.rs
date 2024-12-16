@@ -465,10 +465,15 @@ fn bootGUI(app: &Application){
         println!("modify btn clicked");
         if count_input.text().parse::<i32>().unwrap() as i32 == 0{println!("no number input")}else{
             let selected: String = getcharmode(charbuttons.clone());
-            let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected);
-            let markup: String = format!("{}", result);
-            output.buffer().set_text(&markup);
-            output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
+            
+            if (input_text.text().to_string().len() as i32 == 0) | (count_input.text().to_string().len() as i32 == 0){
+                println!("no text")
+            }else{
+                let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected);
+                let markup: String = format!("{}", result);
+                output.buffer().set_text(&markup);
+                output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
+            }
         }
     });
     let output_title_clip2: Label = output_title_clip.clone();
