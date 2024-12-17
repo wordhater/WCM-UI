@@ -285,11 +285,42 @@ fn bootGUI(app: &Application){
 
     let char_btn_2: gtk::ToggleButton = gtk::ToggleButton::builder()
         .label("_")
-        // .group("yee")
         .build();
+
+    let chargroup = char_btn_0.clone().downcast::<gtk::ToggleButton>().unwrap();
+    
+    char_btn_0.set_group(Some(&chargroup));
+    char_btn_1.set_group(Some(&chargroup));
+    char_btn_2.set_group(Some(&chargroup));
 
     let charbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>> = Rc::new(RefCell::new(vec![char_btn_0.clone(), char_btn_1.clone(), char_btn_2.clone()]));
     char_btn_0.set_active(true);
+
+    // Increase mode switch
+
+    let inc_label: Label = Label::builder()
+        .label("Increase mode (Applies only when aiming for a higher word count):")
+        .build(); 
+    
+    let inc_btn_0: gtk::ToggleButton = gtk::ToggleButton::builder()
+        .label("Before")
+        .build();
+
+    let inc_btn_1: gtk::ToggleButton = gtk::ToggleButton::builder()
+        .label("After")
+        .build();
+
+    let inc_btn_2: gtk::ToggleButton = gtk::ToggleButton::builder()
+        .label("Hidden (WIP)")
+        .build();
+
+    let incgroup = inc_btn_0.clone().downcast::<gtk::ToggleButton>().unwrap();
+
+    inc_btn_0.set_group(Some(&incgroup));
+    inc_btn_1.set_group(Some(&incgroup));
+    inc_btn_2.set_group(Some(&incgroup));
+
+    inc_btn_0.set_active(true);
     // layouts
 
     let row1: Box = Box::new(gtk::Orientation::Horizontal, 5);
@@ -305,6 +336,17 @@ fn bootGUI(app: &Application){
     charrow.append(&char_btn_1);
     charrow.append(&char_btn_2);
 
+    let incrow: Box = Box::new(gtk::Orientation::Horizontal, 5);
+    incrow.set_margin_top(5);
+    incrow.set_margin_bottom(5);
+    
+    incrow.append(&inc_label);
+    incrow.append(&inc_btn_0);
+    incrow.append(&inc_btn_1);
+    incrow.append(&inc_btn_2);
+    
+    
+
     row1.append(&count_input_label);
     row1.append(&count_input);
 
@@ -318,11 +360,15 @@ fn bootGUI(app: &Application){
     let tab2_label: Label = Label::builder()
         .label("Clipboard")
         .build();
+    let tab3_label: Label = Label::builder()
+        .label("Settings")
+        .build();
     let tab1_content: Box = Box::new(gtk::Orientation::Vertical, 5);
     let tab2_content: Box = Box::new(gtk::Orientation::Vertical, 5);
-
+    let tab3_content: Box = Box::new(gtk::Orientation::Vertical, 5);
     gtk_box.append(&title);
-    gtk_box.append(&charrow);
+    tab3_content.append(&charrow);
+    tab3_content.append(&incrow);
 
     tab1_content.append(&input_text);
     tab1_content.append(&horizontal_separator_0);
@@ -385,6 +431,7 @@ fn bootGUI(app: &Application){
 
     tabs.append_page(&tab1_content, Some(&tab1_label));
     tabs.append_page(&tab2_content, Some(&tab2_label));
+    tabs.append_page(&tab3_content, Some(&tab3_label));
 
     gtk_box.append(&tabs);
 
