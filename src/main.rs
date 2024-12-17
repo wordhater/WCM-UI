@@ -54,6 +54,8 @@ fn is_all_numeric(s: &str) -> bool {
     s.chars().all(|c| c.is_digit(10))
 }
 
+// Settings readers
+
 fn getcharmode(charbuttons:  Rc<RefCell<Vec<gtk::ToggleButton>>>) -> String{
     // get selected char
     let mut sel: String = "".to_string();
@@ -64,23 +66,30 @@ fn getcharmode(charbuttons:  Rc<RefCell<Vec<gtk::ToggleButton>>>) -> String{
                 None => "null",
             };
             // add extra chars here
-            if label == "U+205F"{
-                sel = "\u{205f}".to_string();
-                break
-            }
-            if label == "U+2004"{
-                sel = "\u{2004}".to_string();
-                break
-            }
-            if label == "_"{
-                sel = "_".to_string();
-                break
-            }
+            if label == "U+205F"{sel = "\u{205f}".to_string();}
+            if label == "U+2004"{sel = "\u{2004}".to_string();}
+            if label == "_"{sel = "_".to_string();}
+            break
         }
     }
     return sel;
 }
 
+fn getincmode(incbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>>) -> String{
+    let mut sel: String = "".to_string();
+    for button in incbuttons.borrow().iter(){if button.is_active(){
+        let label: &str = match button.label() {
+            Some(formatted) => &formatted.clone(),
+            None => "null",
+        };
+        if label == "Hidden (WIP)" {sel = "Hidden".to_string();}else{
+            sel = label.to_string();
+        }
+        break
+        }
+    }
+    return sel;
+}
 // Modify word count
 
 
@@ -122,8 +131,7 @@ fn decrease<'a>(input: &'a  str, goal: i32, replacement: &'a str) -> String{
 }
 
 // increase
-fn increase<'a>(input: &'a str, goal: i32) -> String {
-    let mode = "prior";
+fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
     let incchar: String = "\u{2061}".to_string();
     let parts: std::str::Split<'_, &str> = input.split("");
     let charcount: i32 = input.len() as i32;
@@ -139,7 +147,7 @@ fn increase<'a>(input: &'a str, goal: i32) -> String {
     }
     let addition: i32 = goal-count_words(input);
     // hidden mode
-    if mode == "hidden"{
+    if mode == "Hidden"{
         if addition > charlist.len() as i32{println!("ok buddy that's too much of an increase");}else{
             let rate: f64 = charlist.len()as f64/addition as f64;
             let mut output: String = String::new();
@@ -156,7 +164,7 @@ fn increase<'a>(input: &'a str, goal: i32) -> String {
             }
             return output;
         }
-    } else if mode == "prior" {
+    } else if mode == "Before" {
         let mut output: String = "".to_string();
         for i in 1..addition{
             output.push_str("\u{3164} ");
@@ -165,18 +173,27 @@ fn increase<'a>(input: &'a str, goal: i32) -> String {
         output.push_str("\u{000D}");
         output.push_str(&input);
         return output;
+    }else if mode == "After"{
+        let mut output: String = "".to_string();
+        output.push_str(&input);
+        output.push_str("\u{000D}");
+        for i in 1..addition{
+            output.push_str("\u{3164} ");
+            println!("char")
+        }
+        return output;
     }
     return input.to_string();
 }
 
-fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String) -> String {
+fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String, incmode: &'a String) -> String {
     let init_count: i32 = count_words(input);
     if init_count > count{
         println!("Decrease requested");
         return decrease(input, count, replacement);
     }else if init_count < count {
         println!("increase requested very broken");
-        return increase(input, count);
+        return increase(input, count, &incmode);
     } else{
         println!("NO difference...");
         return input.to_string();
@@ -314,6 +331,7 @@ fn bootGUI(app: &Application){
         .label("Hidden (WIP)")
         .build();
 
+    let incbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>> = Rc::new(RefCell::new(vec![inc_btn_0.clone(), inc_btn_1.clone(), inc_btn_2.clone()]));
     let incgroup = inc_btn_0.clone().downcast::<gtk::ToggleButton>().unwrap();
 
     inc_btn_0.set_group(Some(&incgroup));
@@ -507,6 +525,7 @@ fn bootGUI(app: &Application){
         .build();
     
     let charbuttons2: Rc<RefCell<Vec<gtk::ToggleButton>>> = charbuttons.clone();
+    let incbuttons2: Rc<RefCell<Vec<gtk::ToggleButton>>> = incbuttons.clone();
 
     apply_button.connect_clicked(move |_button: &Button| {
         println!("modify btn clicked");
@@ -516,7 +535,7 @@ fn bootGUI(app: &Application){
             if (input_text.text().to_string().len() as i32 == 0) | (count_input.text().to_string().len() as i32 == 0){
                 println!("no text")
             }else{
-                let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected);
+                let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons.clone()));
                 let markup: String = format!("{}", result);
                 output.buffer().set_text(&markup);
                 output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
@@ -528,7 +547,7 @@ fn bootGUI(app: &Application){
         println!("mod clip");
         if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{println!("no number")}else{
             let selected: String = getcharmode(charbuttons2.clone());
-            let result: &String = &modifywrapper(&sucessindicator2.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected);
+            let result: &String = &modifywrapper(&sucessindicator2.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons2.clone()));
             output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
             output_title_clip.set_tooltip_text(Some(&result));
         }
