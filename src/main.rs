@@ -90,6 +90,28 @@ fn getincmode(incbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>>) -> String{
     }
     return sel;
 }
+
+// Error prompter
+
+fn handle_error(code: String, window: gtk::Window) -> bool {
+    if code == "ERROR_001"{
+
+        let dialog = gtk::MessageDialog::new(
+            
+            Some(&window),
+            gtk::DialogFlags::empty(),
+            gtk::MessageType::Error,
+            gtk::ButtonsType::Ok,
+            "Too large of an increase requested for hidden mode"
+        );
+
+        dialog.run();
+        dialog.destroy();
+        return true;
+    }
+    return false;
+}
+
 // Modify word count
 
 
@@ -148,8 +170,8 @@ fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
     let addition: i32 = goal-count_words(input);
     // hidden mode
     if mode == "Hidden"{
-        if addition > charlist.len() as i32{println!("ok buddy that's too much of an increase");}else{
-            let rate: f64 = charlist.len()as f64/addition as f64;
+        if addition > charlist.len() as i32{return "ERROR_001".to_string();}else{
+            let rate: f64 = charlist.len() as f64/addition as f64;
             let mut output: String = String::new();
             index = 0;
             for char in charlist{
