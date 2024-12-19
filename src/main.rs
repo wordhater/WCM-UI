@@ -93,20 +93,27 @@ fn getincmode(incbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>>) -> String{
 
 // Error prompter
 
-fn handle_error(code: String, window: gtk::Window) -> bool {
-    if code == "ERROR_001"{
-
-        let dialog = gtk::MessageDialog::new(
+fn popup_error(message: String, window: gtk::ApplicationWindow){
+    let dialog = gtk::MessageDialog::new(
             
-            Some(&window),
-            gtk::DialogFlags::empty(),
-            gtk::MessageType::Error,
-            gtk::ButtonsType::Ok,
-            "Too large of an increase requested for hidden mode"
-        );
+        Some(&window),
+        gtk::DialogFlags::empty(),
+        gtk::MessageType::Error,
+        gtk::ButtonsType::Ok,
+        message
+    );
 
-        dialog.run();
-        dialog.destroy();
+    dialog.show();
+    dialog.connect_response(|dialog, response| {
+        if response == gtk::ResponseType::Ok {
+            dialog.close(); 
+        }
+    });
+}
+
+fn handle_error(code: String, window: gtk::ApplicationWindow) -> bool {
+    if code == "ERROR_001"{
+        popup_error("Too large of an increase requested for hidden mode".to_string(), window);
         return true;
     }
     return false;
@@ -208,14 +215,19 @@ fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
     return input.to_string();
 }
 
-fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String, incmode: &'a String) -> String {
+fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String, incmode: &'a String, window: gtk::ApplicationWindow) -> String {
     let init_count: i32 = count_words(input);
     if init_count > count{
         println!("Decrease requested");
         return decrease(input, count, replacement);
     }else if init_count < count {
-        println!("increase requested very broken");
-        return increase(input, count, &incmode);
+        println!("increase requested");
+        let output: String = increase(input, count, &incmode);
+        if handle_error(output.clone(), window){
+            return "An Error occured".to_owned()
+        }else{
+            return output;
+        }
     } else{
         println!("NO difference...");
         return input.to_string();
@@ -429,7 +441,7 @@ fn bootGUI(app: &Application){
         .build();
     let sucessindicator: Label = Label::builder()
         .label("No loaded clipboard contents")
-        .tooltip_text("yee")
+        .tooltip_text("Click Get Clipboard Contents to get text")
         // .has_tooltip(false)
         .build();
     let count_input_clip: gtk::Entry = gtk::Entry::builder()
@@ -548,6 +560,8 @@ fn bootGUI(app: &Application){
     
     let charbuttons2: Rc<RefCell<Vec<gtk::ToggleButton>>> = charbuttons.clone();
     let incbuttons2: Rc<RefCell<Vec<gtk::ToggleButton>>> = incbuttons.clone();
+    let main_window1: gtk::ApplicationWindow = main_window.clone();
+    let main_window2: gtk::ApplicationWindow = main_window.clone();
 
     apply_button.connect_clicked(move |_button: &Button| {
         println!("modify btn clicked");
@@ -557,7 +571,7 @@ fn bootGUI(app: &Application){
             if (input_text.text().to_string().len() as i32 == 0) | (count_input.text().to_string().len() as i32 == 0){
                 println!("no text")
             }else{
-                let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons.clone()));
+                let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons.clone()), main_window1.clone());
                 let markup: String = format!("{}", result);
                 output.buffer().set_text(&markup);
                 output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
@@ -569,7 +583,7 @@ fn bootGUI(app: &Application){
         println!("mod clip");
         if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{println!("no number")}else{
             let selected: String = getcharmode(charbuttons2.clone());
-            let result: &String = &modifywrapper(&sucessindicator2.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons2.clone()));
+            let result: &String = &modifywrapper(&sucessindicator2.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons2.clone()), main_window2.clone());
             output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
             output_title_clip.set_tooltip_text(Some(&result));
         }
