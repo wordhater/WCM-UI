@@ -32,7 +32,6 @@ fn count_words(input: &str) -> i32 {
 }
 
 fn modulus_i32(a: i32, b: i32) -> bool{
-    println!("result: {}", (((a % b) + b) % b));
     if ((a % b) + b) % b == 0{
         return true;
     }else{return false;}
@@ -115,6 +114,9 @@ fn handle_error(code: String, window: gtk::ApplicationWindow) -> bool {
     if code == "ERROR_001"{
         popup_error("Too large of an increase requested for hidden mode".to_string(), window);
         return true;
+    }else if code == "ERROR_002"{
+        popup_error("Invalid Number Entered".to_string(), window);
+        return true;
     }
     return false;
 }
@@ -145,13 +147,9 @@ fn decrease<'a>(input: &'a  str, goal: i32, replacement: &'a str) -> String{
         let spacerate: i32 = (init_count -1)/(init_count - totaldiff);
         for i in 0..init_count{
             output.push_str(&get_item_by_index_str(&words, i as usize));
-            println!("rate: {}", spacerate);
-            println!("words: {}", init_count);
             if modulus_i32(i, spacerate) {
                 output.push_str(" ");
-                println!("space")
             }else {
-                println!("char");
                 output.push_str(replacement);
             }
         }
@@ -168,7 +166,6 @@ fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
     let mut index: i32 = 0;
     for part in parts{
         if index != 0 {if index != charcount+1{
-            println!("e:{}", part);
             charlist.push_back(part.to_string());
         }}
         index += 1;
@@ -182,12 +179,9 @@ fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
             let mut output: String = String::new();
             index = 0;
             for char in charlist{
-                println!("yee");
                 output.push_str(&char);
                 if index % rate as i32 == 0{
-                    println!("increase");
                     output.push_str(&"\u{2061}");
-                    println!("{}", output)
                 }
                 index += 1
             }
@@ -197,7 +191,6 @@ fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
         let mut output: String = "".to_string();
         for i in 1..addition{
             output.push_str("\u{3164} ");
-            println!("char")
         }
         output.push_str("\u{000D}");
         output.push_str(&input);
@@ -208,7 +201,6 @@ fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
         output.push_str("\u{000D}");
         for i in 1..addition{
             output.push_str("\u{3164} ");
-            println!("char")
         }
         return output;
     }
@@ -565,7 +557,7 @@ fn bootGUI(app: &Application){
 
     apply_button.connect_clicked(move |_button: &Button| {
         println!("modify btn clicked");
-        if count_input.text().parse::<i32>().unwrap() as i32 == 0{println!("no number input")}else{
+        if count_input.text().parse::<i32>().unwrap() as i32 == 0{let _ = handle_error("ERROR_002".to_string(), main_window1.clone());}else{
             let selected: String = getcharmode(charbuttons.clone());
             
             if (input_text.text().to_string().len() as i32 == 0) | (count_input.text().to_string().len() as i32 == 0){
@@ -581,7 +573,7 @@ fn bootGUI(app: &Application){
     let output_title_clip2: Label = output_title_clip.clone();
     apply_button_clip.connect_clicked(move |_button: &Button|{
         println!("mod clip");
-        if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{println!("no number")}else{
+        if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{let _ = handle_error("ERROR_002".to_string(), main_window2.clone());}else{
             let selected: String = getcharmode(charbuttons2.clone());
             let result: &String = &modifywrapper(&sucessindicator2.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons2.clone()), main_window2.clone());
             output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
