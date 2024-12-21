@@ -572,7 +572,6 @@ fn bootGUI(app: &Application){
     });
     let output_title_clip2: Label = output_title_clip.clone();
     apply_button_clip.connect_clicked(move |_button: &Button|{
-        println!("mod clip");
         if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{let _ = handle_error("ERROR_002".to_string(), main_window2.clone());}else{
             let selected: String = getcharmode(charbuttons2.clone());
             let result: &String = &modifywrapper(&sucessindicator2.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons2.clone()), main_window2.clone());
