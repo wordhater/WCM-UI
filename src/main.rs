@@ -1,9 +1,10 @@
 use gtk::{Label};
 use gtk::{prelude::*};
+
 use std::collections::linked_list::Iter;
 use std::{collections::LinkedList};
 use clipboard::{ClipboardProvider, ClipboardContext};
-use adw::Application;
+use adw::{Application};
 use gtk::{glib, ApplicationWindow, Button, Box};
 use std::rc::Rc;
 use std::cell::{RefCell};
@@ -102,7 +103,9 @@ fn popup_error(message: String, window: gtk::ApplicationWindow){
         message
     );
 
+    dialog.set_decorated(false);
     dialog.show();
+
     dialog.connect_response(|dialog, response| {
         if response == gtk::ResponseType::Ok {
             dialog.close(); 
@@ -112,10 +115,13 @@ fn popup_error(message: String, window: gtk::ApplicationWindow){
 
 fn handle_error(code: String, window: gtk::ApplicationWindow) -> bool {
     if code == "ERROR_001"{
-        popup_error("Too large of an increase requested for hidden mode".to_string(), window);
+        popup_error("\nToo large of an increase requested for hidden mode".to_string(), window);
         return true;
     }else if code == "ERROR_002"{
-        popup_error("Invalid Number Entered".to_string(), window);
+        popup_error("\nInvalid Number Entered".to_string(), window);
+        return true;
+    }else if code == "ERROR_003"{
+        popup_error("\nNo Text Entered".to_string(), window);
         return true;
     }
     return false;
@@ -332,7 +338,6 @@ fn bootGUI(app: &Application){
 
     let chargroup = char_btn_0.clone().downcast::<gtk::ToggleButton>().unwrap();
     
-    char_btn_0.set_group(Some(&chargroup));
     char_btn_1.set_group(Some(&chargroup));
     char_btn_2.set_group(Some(&chargroup));
 
@@ -360,7 +365,6 @@ fn bootGUI(app: &Application){
     let incbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>> = Rc::new(RefCell::new(vec![inc_btn_0.clone(), inc_btn_1.clone(), inc_btn_2.clone()]));
     let incgroup = inc_btn_0.clone().downcast::<gtk::ToggleButton>().unwrap();
 
-    inc_btn_0.set_group(Some(&incgroup));
     inc_btn_1.set_group(Some(&incgroup));
     inc_btn_2.set_group(Some(&incgroup));
 
@@ -557,26 +561,45 @@ fn bootGUI(app: &Application){
 
     apply_button.connect_clicked(move |_button: &Button| {
         println!("modify btn clicked");
-        if count_input.text().parse::<i32>().unwrap() as i32 == 0{let _ = handle_error("ERROR_002".to_string(), main_window1.clone());}else{
-            let selected: String = getcharmode(charbuttons.clone());
-            
-            if (input_text.text().to_string().len() as i32 == 0) | (count_input.text().to_string().len() as i32 == 0){
-                println!("no text")
+        if count_input.text().to_string() != ""{
+            println!("filled");
+            if count_input.text().to_string() != ""{
+                if count_input.text().parse::<i32>().unwrap() as i32 == 0{let _ = handle_error("ERROR_002".to_string(), main_window1.clone());}else{
+                    let selected: String = getcharmode(charbuttons.clone());
+
+                    if (input_text.text().to_string().len() as i32 == 0) | (count_input.text().to_string().len() as i32 == 0){
+                        println!("no text")
+                    }else{
+                        let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons.clone()), main_window1.clone());
+                        let markup: String = format!("{}", result);
+                        output.buffer().set_text(&markup);
+                        output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
+                    }
+                }
             }else{
-                let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons.clone()), main_window1.clone());
-                let markup: String = format!("{}", result);
-                output.buffer().set_text(&markup);
-                output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
+                handle_error("ERROR_002".to_string(), main_window1.clone()); 
             }
+        }else{
+            handle_error("ERROR_003".to_string(), main_window1.clone());
         }
+        
     });
     let output_title_clip2: Label = output_title_clip.clone();
     apply_button_clip.connect_clicked(move |_button: &Button|{
-        if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{let _ = handle_error("ERROR_002".to_string(), main_window2.clone());}else{
-            let selected: String = getcharmode(charbuttons2.clone());
-            let result: &String = &modifywrapper(&sucessindicator2.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons2.clone()), main_window2.clone());
-            output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
-            output_title_clip.set_tooltip_text(Some(&result));
+        if count_input_clip.text().to_string() != ""{
+            println!("filled");
+            if count_input_clip.text().to_string() != ""{
+                if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{let _ = handle_error("ERROR_002".to_string(), main_window2.clone());}else{
+                    let selected: String = getcharmode(charbuttons2.clone());
+                    let result: &String = &modifywrapper(&sucessindicator2.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons2.clone()), main_window2.clone());
+                    output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
+                    output_title_clip.set_tooltip_text(Some(&result));
+                }
+            }else{
+                handle_error("ERROR_002".to_string(), main_window2.clone());
+            }
+        }else{
+            handle_error("ERROR_003".to_string(), main_window2.clone());
         }
     });
 
