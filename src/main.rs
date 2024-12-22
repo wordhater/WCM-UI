@@ -123,6 +123,12 @@ fn handle_error(code: String, window: gtk::ApplicationWindow) -> bool {
     }else if code == "ERROR_003"{
         popup_error("\nNo Text Entered".to_string(), window);
         return true;
+    }else if code == "ERROR_004"{
+        popup_error("\nInvalid Clipboard Contents".to_string(), window);
+        return true;
+    }else if code == "ERROR_005"{
+        popup_error("\nUnable to access Clipboard".to_string(), window);
+        return true;
     }
     return false;
 }
@@ -526,7 +532,16 @@ fn bootGUI(app: &Application){
 
     // clipboard
 
+    let main_window: ApplicationWindow = gtk::ApplicationWindow::builder()
+        .application(app)
+        .default_width(600)
+        .default_height(700)
+        .child(&gtk_box)
+        .title("WCM UI")
+        .build();
+
     let sucessindicator2: Label = sucessindicator.clone();
+    let main_window3: gtk::ApplicationWindow = main_window.clone();
     
     getbtn.connect_clicked(move |_getbtn: &Button| {
         let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
@@ -535,24 +550,22 @@ fn bootGUI(app: &Application){
             Ok(content) => {
                 let clipcount: i32 = count_words_inc_increase(&content);
                 println!("Clipboard content has {} words.", clipcount);
-                sucessindicator.set_label(&format!("Clipboard contains {} words", clipcount));
-                sucessindicator.set_tooltip_text(Some(&content));
-
+                if content.to_string() == ""{
+                    let _ = handle_error("ERROR_004".to_string(), main_window3.clone());
+                }else{
+                    sucessindicator.set_label(&format!("Clipboard contains {} words", clipcount));
+                    sucessindicator.set_tooltip_text(Some(&content));
+                }
             }
             Err(error) => {
                 println!("Error getting clipboard content: {}", error);
+                let _ = handle_error("ERROR_005".to_string(), main_window3.clone());
                 sucessindicator.set_label("Error occurred when reading clipboard contents");
             }
         }
     });
 
-    let main_window: ApplicationWindow = gtk::ApplicationWindow::builder()
-        .application(app)
-        .default_width(600)
-        .default_height(700)
-        .child(&gtk_box)
-        .title("WCM UI")
-        .build();
+
     
     let charbuttons2: Rc<RefCell<Vec<gtk::ToggleButton>>> = charbuttons.clone();
     let incbuttons2: Rc<RefCell<Vec<gtk::ToggleButton>>> = incbuttons.clone();
