@@ -2,7 +2,9 @@
 
 A Graphical user interface for Word count modifier, a script used to reduce to displayed work count of a piece of text in programs such as Microsoft Word.
 
-## Building
+## Building (On Linux)
+
+Refer to the [windows branch](https://github.com/wordhater/WCM-UI/tree/windows) for information on building the windows version of the script
 
 ### Dependencies
 
@@ -16,7 +18,6 @@ clipboard V0.5.0
 cargo build
 ```
 
-[Additional notes for building for/on windows](https://gtk-rs.org/gtk4-rs/stable/latest/book/installation_windows.html)
 
 
 ## Known Issues
