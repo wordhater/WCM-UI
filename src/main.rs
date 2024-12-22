@@ -3,7 +3,7 @@ use gtk::{prelude::*};
 use std::collections::linked_list::Iter;
 use std::{collections::LinkedList};
 use clipboard::{ClipboardProvider, ClipboardContext};
-use adw::Application;
+use gtk::Application;
 use gtk::{glib, ApplicationWindow, Button, Box};
 use std::rc::Rc;
 use std::cell::{RefCell};
