@@ -1,6 +1,5 @@
 use gtk::{Label};
 use gtk::{prelude::*};
-
 use std::collections::linked_list::Iter;
 use std::{collections::LinkedList};
 use clipboard::{ClipboardProvider, ClipboardContext};
@@ -516,20 +515,6 @@ fn bootGUI(app: &Application){
             }
         });
     }
-    // toggle controller - this never worked
-    // for button in charbuttons.borrow().iter() {
-    //     let charbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>> = Rc::clone(&charbuttons);
-    //     button.connect_toggled(move |btn| {
-    //         if btn.is_active() {
-    //             // Deactivate all other buttons when this one is activated
-    //             for other_button in charbuttons.borrow().iter() {
-    //                 other_button.set_active(false);
-    //             }
-    //             btn.activate();
-    //         } else{println!("deactivate")}
-    //     });
-    // }
-
     // clipboard
 
     let main_window: ApplicationWindow = gtk::ApplicationWindow::builder()
