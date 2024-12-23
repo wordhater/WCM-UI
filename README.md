@@ -20,8 +20,6 @@ Qlearn/[Canvas Based Sites](https://www.instructure.com/canvas): ✅
 
 LibreOffice - Linux: ❎
 
-## Building
-
 ### Dependencies
 
 libadwaita V-1.5
@@ -35,7 +33,6 @@ cargo build
 ```
 
 [Additional notes for building for/on windows](https://gtk-rs.org/gtk4-rs/stable/latest/book/installation_windows.html)
-
 
 ## Known Issues
 
