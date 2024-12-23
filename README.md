@@ -20,6 +20,10 @@ Qlearn/[Canvas Based Sites](https://www.instructure.com/canvas): ✅
 
 LibreOffice - Linux: ❎
 
+## Building (On Linux)
+
+Refer to the [windows branch](https://github.com/wordhater/WCM-UI/tree/windows) for information on building the windows version of the script
+
 ### Dependencies
 
 libadwaita V-1.5
