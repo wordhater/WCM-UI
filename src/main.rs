@@ -7,6 +7,7 @@ use adw::{Application};
 use gtk::{glib, ApplicationWindow, Button, Box};
 use std::rc::Rc;
 use std::cell::{RefCell};
+use unicode_segmentation::UnicodeSegmentation;
 
 const APP_ID: &str = "org.gtk_rs.WCM_UI";
 
@@ -40,7 +41,6 @@ fn modulus_i32(a: i32, b: i32) -> bool{
 fn count_words_inc_increase(input: &str) -> i32 {
     let parts: std::str::Split<'_, &str> = input.split(" ");
     let mut count: i32 = 0;
-    let mut modlist: LinkedList<String> = LinkedList::new();
     for part in parts{
         for segment in part.split("\u{205f}"){
             count += 1;
@@ -216,6 +216,12 @@ fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
         return output;
     }
     return input.to_string();
+}
+
+fn anti_ai_detection<'a>(input: &'a str, window: gtk::ApplicationWindow) -> String{
+    let length: i32 = input.graphemes(true).count() as i32;
+    println!("char count: {}", length);
+    return "".to_string();
 }
 
 fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String, incmode: &'a String, window: gtk::ApplicationWindow) -> String {
