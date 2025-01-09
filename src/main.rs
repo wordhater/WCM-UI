@@ -218,20 +218,27 @@ fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
     return input.to_string();
 }
 
-fn anti_ai_detection<'a>(input: &'a str) -> String{
+fn anti_ai_detection<'a>(input: &'a str, strength: i32, mode: i8) -> String{
+    // modes 1=homoglyphs, 2=homoglyphs+word merging, 3=word merging
     let chars_from: Vec<&str> = vec!["a", "c", "d", "e", "h", "i", "j", "o", "p", "x", "y"];
     let chars_to: Vec<&str> = vec!["\u{0430}","\u{0441}","\u{0501}","\u{0435}","\u{04bb}","\u{0456}","\u{0458}","\u{03bf}","\u{0440}","\u{0445}","\u{0443}"];
     let length: i32 = input.graphemes(true).count() as i32;
     println!("char count: {}", length);
-    for segment in input.split(""){
-        println!("char: {}", segment);
-        if chars_from.contains(&segment){
-            println!("replacing")
+    let mut out = "".to_string();
+    if (mode == 1)|(mode == 2){
+        for segment in input.split(""){
+            println!("char: {}", segment);
+            if chars_from.contains(&segment){
+                println!("replacing");
+                let index: usize = chars_from.iter().position(|&r| r == segment).unwrap();
+                out += chars_to[index];
+            }else{
+                out += segment;
+            }
 
         }
-        
     }
-    return "".to_string();
+    return out;
 }
 
 fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String, incmode: &'a String, window: gtk::ApplicationWindow) -> String {
@@ -255,7 +262,7 @@ fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String, incmod
 
 fn main()  -> glib::ExitCode {
     let app: Application = Application::builder().application_id(APP_ID).build();
-    anti_ai_detection("asdjhf;kodsahf;lkjsahflkadsjghflkasjdflkjasdgflkj askjashdgflkjsadfg sdakhfghdafg skjhgfsakjl g");
+    println!("{}", anti_ai_detection("The rapid advancement of technology often overshadows the echoes of ancient wisdom embedded within its foundations. While sleek interfaces and complex algorithms seem worlds apart from ancient philosophies, a closer look reveals surprising connections. Take, for example, the concept of mindfulness, central to many Eastern traditions, finding its modern expression in meditation apps and stress-reduction techniques.  Similarly, the principles of sustainable living, once practiced intuitively by indigenous cultures, are now gaining traction as eco-conscious movements strive for environmental balance. Even the pursuit of knowledge itself echoes ancient ideals. The insatiable human desire to understand the world, once fulfilled through storytelling and oral traditions, now finds expression in scientific research and technological innovation. While technology may appear revolutionary, its roots often lie in the enduring wisdom of past generations, reminding us that true progress lies in harmonizing innovation with timeless principles. ",90, 1));
     // Connect to "activate" signal of `app`
     app.connect_activate(bootGUI);
 
