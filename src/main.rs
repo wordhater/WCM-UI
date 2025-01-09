@@ -218,9 +218,19 @@ fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
     return input.to_string();
 }
 
-fn anti_ai_detection<'a>(input: &'a str, window: gtk::ApplicationWindow) -> String{
+fn anti_ai_detection<'a>(input: &'a str) -> String{
+    let chars_from: Vec<&str> = vec!["a", "c", "d", "e", "h", "i", "j", "o", "p", "x", "y"];
+    let chars_to: Vec<&str> = vec!["\u{0430}","\u{0441}","\u{0501}","\u{0435}","\u{04bb}","\u{0456}","\u{0458}","\u{03bf}","\u{0440}","\u{0445}","\u{0443}"];
     let length: i32 = input.graphemes(true).count() as i32;
     println!("char count: {}", length);
+    for segment in input.split(""){
+        println!("char: {}", segment);
+        if chars_from.contains(&segment){
+            println!("replacing")
+
+        }
+        
+    }
     return "".to_string();
 }
 
@@ -245,7 +255,7 @@ fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String, incmod
 
 fn main()  -> glib::ExitCode {
     let app: Application = Application::builder().application_id(APP_ID).build();
-
+    anti_ai_detection("asdjhf;kodsahf;lkjsahflkadsjghflkasjdflkjasdgflkj askjashdgflkjsadfg sdakhfghdafg skjhgfsakjl g");
     // Connect to "activate" signal of `app`
     app.connect_activate(bootGUI);
 
