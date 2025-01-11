@@ -296,7 +296,6 @@ fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String, incmod
 
 fn main()  -> glib::ExitCode {
     let app: Application = Application::builder().application_id(APP_ID).build();
-    println!("{}", anti_ai_detection("The rapid advancement of technology often overshadows the echoes of ancient wisdom embedded within its foundations. While sleek interfaces and complex algorithms seem worlds apart from ancient philosophies, a closer look reveals surprising connections. Take, for example, the concept of mindfulness, central to many Eastern traditions, finding its modern expression in meditation apps and stress-reduction techniques.  Similarly, the principles of sustainable living, once practiced intuitively by indigenous cultures, are now gaining traction as eco-conscious movements strive for environmental balance. Even the pursuit of knowledge itself echoes ancient ideals. The insatiable human desire to understand the world, once fulfilled through storytelling and oral traditions, now finds expression in scientific research and technological innovation. While technology may appear revolutionary, its roots often lie in the enduring wisdom of past generations, reminding us that true progress lies in harmonizing innovation with timeless principles. ",90, 2));
     // Connect to "activate" signal of `app`
     app.connect_activate(bootGUI);
 
@@ -310,7 +309,7 @@ fn bootGUI(app: &Application){
         .orientation(gtk::Orientation::Vertical)
         .build();
 
-    // for some reason it errors if I create multiple instances on the same element in the view
+    // for some reason it errors if I create multiple instances on the same element in the view, there is no better way I can find to fix this mess
 
     let horizontal_separator_0 = gtk::Separator::builder()
         .margin_top(5)
@@ -379,12 +378,28 @@ fn bootGUI(app: &Application){
         .build();
     output_title.set_markup("<span font=\"15\"><b> </b></span>");
 
+    // Anti AI detection
+
+    let strength_slider = gtk::Scale::with_range(gtk::Orientation::Horizontal, 5.0, 100.0, 1.0);
+    strength_slider.set_draw_value(true);
+    strength_slider.set_width_request(300);
+    let strength_label = gtk::Label::builder()
+        .label("\nStrength:")
+        .build();
+    
+    let strengthrow: Box = Box::new(gtk::Orientation::Horizontal, 5);
+    
+    strengthrow.append(&strength_label);
+    strengthrow.append(&strength_slider);
+    // paste button
+    
+
     // mode selection
 
 
     // char buttons
     let char_label: Label =  Label::builder()
-        .label("Char selection (SELECT ONLY ONE AT A TIME): ")
+        .label("Char selection: ")
         .build();
     let char_btn_0: gtk::ToggleButton = gtk::ToggleButton::builder()
         .label("U+205F")
@@ -454,8 +469,6 @@ fn bootGUI(app: &Application){
     incrow.append(&inc_btn_0);
     incrow.append(&inc_btn_1);
     incrow.append(&inc_btn_2);
-    
-    
 
     row1.append(&count_input_label);
     row1.append(&count_input);
@@ -471,14 +484,25 @@ fn bootGUI(app: &Application){
         .label("Clipboard")
         .build();
     let tab3_label: Label = Label::builder()
+        .label("Anti AI Detection tools")
+        .build();
+    let tab4_label: Label = Label::builder()
         .label("Settings")
         .build();
+
     let tab1_content: Box = Box::new(gtk::Orientation::Vertical, 5);
     let tab2_content: Box = Box::new(gtk::Orientation::Vertical, 5);
     let tab3_content: Box = Box::new(gtk::Orientation::Vertical, 5);
+    let tab4_content: Box = Box::new(gtk::Orientation::Vertical, 5);
+
+    // anti ai tab builder
+    
+    tab3_content.append(&strengthrow);
+
+    // other builders
     gtk_box.append(&title);
-    tab3_content.append(&charrow);
-    tab3_content.append(&incrow);
+    tab4_content.append(&charrow);
+    tab4_content.append(&incrow);
 
     tab1_content.append(&input_text);
     tab1_content.append(&horizontal_separator_0);
@@ -542,6 +566,7 @@ fn bootGUI(app: &Application){
     tabs.append_page(&tab1_content, Some(&tab1_label));
     tabs.append_page(&tab2_content, Some(&tab2_label));
     tabs.append_page(&tab3_content, Some(&tab3_label));
+    tabs.append_page(&tab4_content, Some(&tab4_label));
 
     gtk_box.append(&tabs);
 
@@ -565,8 +590,9 @@ fn bootGUI(app: &Application){
                 println!("all numbers")
             }else{
                 println!("letters detected");
-                let mut output: String = text.to_string();
-                output.pop();
+                let mut chars: std::str::Chars<'_> = text.chars();
+                chars.next_back();
+                let output: &str = chars.as_str();
                 println!("{}", output);
                 _count_input.set_text(&output);
             }
