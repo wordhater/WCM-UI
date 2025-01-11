@@ -128,6 +128,9 @@ fn handle_error(code: String, window: gtk::ApplicationWindow) -> bool {
     }else if code == "ERROR_005"{
         popup_error("\nUnable to access Clipboard".to_string(), window);
         return true;
+    }else if code == "ERROR_006"{
+        popup_error("\nNo Processed Text to Copy".to_string(), window);
+        return true;
     }
     return false;
 }
@@ -387,13 +390,37 @@ fn bootGUI(app: &Application){
         .label("\nStrength:")
         .build();
     
+    let AI_left: Box = Box::new(gtk::Orientation::Vertical, 5);
+    AI_left.set_width_request(600);
+    let AI_right: Box = Box::new(gtk::Orientation::Vertical, 5);
+    AI_right.set_width_request(600);
+
     let strengthrow: Box = Box::new(gtk::Orientation::Horizontal, 5);
     
     strengthrow.append(&strength_label);
     strengthrow.append(&strength_slider);
-    // paste button
-    
 
+    AI_left.append(&strengthrow);
+    AI_left.append(&gtk::Separator::builder().margin_top(12).margin_bottom(5).build());
+    let mode_header = Label::builder().label("Modifications").build();
+    mode_header.set_halign(gtk::Align::Center);
+    AI_left.append(&mode_header);
+
+    // paste button
+
+    let AI_paste_button = Button::builder()
+        .label("Get Clipboard Contents")
+        .build();
+
+    AI_right.append(&AI_paste_button);
+
+    let AI_sucessindicator: Label = Label::builder()
+        .label("No loaded clipboard contents")
+        .tooltip_text("Click Get Clipboard Contents to get text")
+        .build();
+
+    AI_right.append(&AI_sucessindicator);
+    AI_right.append(&gtk::Separator::builder().margin_top(5).margin_bottom(5).build());
     // mode selection
 
 
@@ -497,7 +524,13 @@ fn bootGUI(app: &Application){
 
     // anti ai tab builder
     
-    tab3_content.append(&strengthrow);
+    let tab4_column_container: Box = Box::new(gtk::Orientation::Horizontal, 5);
+    tab4_column_container.append(&AI_left);
+    tab4_column_container.append(&gtk::Separator::builder().orientation(gtk::Orientation::Vertical).build());
+    tab4_column_container.append(&AI_right);
+    
+    tab3_content.append(&tab4_column_container);
+    
 
     // other builders
     gtk_box.append(&title);
@@ -602,7 +635,7 @@ fn bootGUI(app: &Application){
 
     let main_window: ApplicationWindow = gtk::ApplicationWindow::builder()
         .application(app)
-        .default_width(600)
+        .default_width(1200)
         .default_height(700)
         .child(&gtk_box)
         .title("WCM UI")
@@ -611,7 +644,7 @@ fn bootGUI(app: &Application){
     let sucessindicator2: Label = sucessindicator.clone();
     let main_window3: gtk::ApplicationWindow = main_window.clone();
     
-    getbtn.connect_clicked(move |_getbtn: &Button| {
+    let clip_btn_logic = move |_getbtn: &Button| {
         let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
         let potential_clipboardcontent: Result<String, std::prelude::v1::Box<dyn std::error::Error>> = ctx.get_contents();
         match potential_clipboardcontent {
@@ -621,24 +654,33 @@ fn bootGUI(app: &Application){
                 if content.to_string() == ""{
                     let _ = handle_error("ERROR_004".to_string(), main_window3.clone());
                 }else{
-                    sucessindicator.set_label(&format!("Clipboard contains {} words", clipcount));
-                    sucessindicator.set_tooltip_text(Some(&content));
+                    if tabs.current_page() == Some(1){
+                        sucessindicator.set_label(&format!("Clipboard contains {} words", clipcount));
+                    }else if tabs.current_page() == Some(2){
+                        AI_sucessindicator.set_label(&format!("Clipboard contains {} words", clipcount));
+                    }
+                    _getbtn.set_tooltip_text(Some(&content));
+                    
                 }
             }
             Err(error) => {
                 println!("Error getting clipboard content: {}", error);
                 let _ = handle_error("ERROR_005".to_string(), main_window3.clone());
-                sucessindicator.set_label("Error occurred when reading clipboard contents");
+                _getbtn.set_label("Error occurred when reading clipboard contents");
             }
         }
-    });
+    };
+    getbtn.connect_clicked(clip_btn_logic.clone());
+    AI_paste_button.connect_clicked(clip_btn_logic.clone());
 
 
-    
+    // cloning variables so I can reference them    
     let charbuttons2: Rc<RefCell<Vec<gtk::ToggleButton>>> = charbuttons.clone();
     let incbuttons2: Rc<RefCell<Vec<gtk::ToggleButton>>> = incbuttons.clone();
     let main_window1: gtk::ApplicationWindow = main_window.clone();
     let main_window2: gtk::ApplicationWindow = main_window.clone();
+    let main_window3: gtk::ApplicationWindow = main_window.clone();
+
 
     apply_button.connect_clicked(move |_button: &Button| {
         println!("modify btn clicked");
@@ -672,7 +714,7 @@ fn bootGUI(app: &Application){
             if count_input_clip.text().to_string() != ""{
                 if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{let _ = handle_error("ERROR_002".to_string(), main_window2.clone());}else{
                     let selected: String = getcharmode(charbuttons2.clone());
-                    let result: &String = &modifywrapper(&sucessindicator2.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons2.clone()), main_window2.clone());
+                    let result: &String = &modifywrapper(&getbtn.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons2.clone()), main_window2.clone());
                     output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
                     output_title_clip.set_tooltip_text(Some(&result));
                 }
@@ -691,7 +733,10 @@ fn bootGUI(app: &Application){
             Some(formatted) => &formatted.clone(),
             None => "null",
         };
-        ctx.set_contents(text.to_owned()).unwrap();
+        if text == "nothing yet"{handle_error("ERROR_006".to_string(), main_window3.clone());}else{
+            ctx.set_contents(text.to_owned()).unwrap();
+        }
     });
+
     main_window.present();
 }
