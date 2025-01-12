@@ -402,13 +402,43 @@ fn bootGUI(app: &Application){
 
     AI_left.append(&strengthrow);
     AI_left.append(&gtk::Separator::builder().margin_top(12).margin_bottom(5).build());
+    
+    // mode selection
+    
     let mode_header = Label::builder().label("Modifications").build();
     mode_header.set_halign(gtk::Align::Center);
     AI_left.append(&mode_header);
 
+    let AI_mode_btn_0: gtk::ToggleButton = gtk::ToggleButton::builder()
+        .label("Homoglyphs")
+        .build();
+
+    let AI_mode_btn_1: gtk::ToggleButton = gtk::ToggleButton::builder()
+        .label("Word Merging")
+        .build();
+
+    let AI_mode_btn_2: gtk::ToggleButton = gtk::ToggleButton::builder()
+        .label("Both(very effective)")
+        .build();
+    AI_mode_btn_2.set_active(true);
+    let AI_mode_layout: Box = Box::new(gtk::Orientation::Vertical, 5);
+    AI_mode_layout.append(&AI_mode_btn_0);
+    AI_mode_layout.append(&AI_mode_btn_1);
+    AI_mode_layout.append(&AI_mode_btn_2);
+    
+    let AI_mode_group: gtk::ToggleButton = AI_mode_btn_0.clone().downcast::<gtk::ToggleButton>().unwrap();
+
+    AI_mode_btn_1.set_group(Some(&AI_mode_group));
+    AI_mode_btn_2.set_group(Some(&AI_mode_group));
+
+    let AI_mode_buttons: Rc<RefCell<Vec<gtk::ToggleButton>>> = Rc::new(RefCell::new(vec![AI_mode_btn_0.clone(), AI_mode_btn_1.clone(), AI_mode_btn_2.clone()]));
+
+    AI_left.append(&AI_mode_layout);
+    AI_mode_btn_2.set_active(true);
+
     // paste button
 
-    let AI_paste_button = Button::builder()
+    let AI_paste_button: Button = Button::builder()
         .label("Get Clipboard Contents")
         .build();
 
@@ -421,8 +451,14 @@ fn bootGUI(app: &Application){
 
     AI_right.append(&AI_sucessindicator);
     AI_right.append(&gtk::Separator::builder().margin_top(5).margin_bottom(5).build());
-    // mode selection
 
+    // apply
+    let apply_anti_AI: Button = Button::builder()
+        .label("Apply changes")
+        .build();
+
+    AI_right.append(&apply_anti_AI);
+    
 
     // char buttons
     let char_label: Label =  Label::builder()
