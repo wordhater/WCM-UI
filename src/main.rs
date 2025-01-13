@@ -8,6 +8,7 @@ use gtk::{glib, ApplicationWindow, Button, Box};
 use std::rc::Rc;
 use std::cell::{RefCell};
 use unicode_segmentation::UnicodeSegmentation;
+use rand::Rng;
 
 const APP_ID: &str = "org.gtk_rs.WCM_UI";
 
@@ -89,6 +90,23 @@ fn getincmode(incbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>>) -> String{
     }
     return sel;
 }
+fn getAImode(AImode_btns:  Rc<RefCell<Vec<gtk::ToggleButton>>>) -> i8{
+    let mut sel: i8 = 0;
+    for button in AImode_btns.borrow().iter() {
+        if button.is_active(){
+            let label: &str = match button.label() {
+                Some(formatted) => &formatted.clone(),
+                None => "null",
+            };
+            // add extra modes here
+            if label == "Homoglyphs"{sel = 1;}
+            if label == "Word Merging"{sel = 2;}
+            if label == "Both(very effective)"{sel = 3;}
+            break
+        }
+    }
+    return sel;
+}
 
 // Error prompter
 
@@ -130,6 +148,9 @@ fn handle_error(code: String, window: gtk::ApplicationWindow) -> bool {
         return true;
     }else if code == "ERROR_006"{
         popup_error("\nNo Processed Text to Copy".to_string(), window);
+        return true;
+    }else if code == "ERROR_007"{
+        popup_error("\nToo few words to process for word merging".to_string(), window);
         return true;
     }
     return false;
@@ -230,13 +251,15 @@ fn anti_ai_detection<'a>(input: &'a str, strength: i32, mode: i8) -> String{
     println!("char count: {}", length);
     let mut out = "".to_string();
 
-    if (mode == 1)|(mode == 2){
+    if (mode == 1)|(mode == 3){
         for segment in input.split(""){
             println!("char: {}", segment);
             if chars_from.contains(&segment){
-                println!("replacing");
-                let index: usize = chars_from.iter().position(|&r| r == segment).unwrap();
-                out += chars_to[index];
+                if rand::thread_rng().gen_range(1..101) < strength{
+                    println!("replacing");
+                    let index: usize = chars_from.iter().position(|&r| r == segment).unwrap();
+                    out += chars_to[index];
+                }
             }else{
                 out += segment;
             }
@@ -247,6 +270,9 @@ fn anti_ai_detection<'a>(input: &'a str, strength: i32, mode: i8) -> String{
     }
     if(mode == 2)|(mode == 3){
         let init_count: i32 = count_words(&out);
+        if init_count == 1{
+            return "ERROR_007".to_string();
+        }
         let target: i32 = ((init_count as f32 /100.0)*(100 - strength) as f32).ceil() as i32;
         let rate: i32 =  ((init_count as f32 -1.0)/(init_count-target) as f32).ceil() as i32;
         let mut output = "".to_string();
@@ -399,6 +425,7 @@ fn bootGUI(app: &Application){
     
     strengthrow.append(&strength_label);
     strengthrow.append(&strength_slider);
+    strength_slider.set_value(80.0);
 
     AI_left.append(&strengthrow);
     AI_left.append(&gtk::Separator::builder().margin_top(12).margin_bottom(5).build());
@@ -454,11 +481,11 @@ fn bootGUI(app: &Application){
 
     // apply
     let apply_anti_AI: Button = Button::builder()
-        .label("Apply changes")
+        .label("Apply and Copy Changes")
         .build();
 
     AI_right.append(&apply_anti_AI);
-    
+
 
     // char buttons
     let char_label: Label =  Label::builder()
@@ -716,6 +743,7 @@ fn bootGUI(app: &Application){
     let main_window1: gtk::ApplicationWindow = main_window.clone();
     let main_window2: gtk::ApplicationWindow = main_window.clone();
     let main_window3: gtk::ApplicationWindow = main_window.clone();
+    let main_window4: gtk::ApplicationWindow = main_window.clone();
 
 
     apply_button.connect_clicked(move |_button: &Button| {
@@ -743,6 +771,30 @@ fn bootGUI(app: &Application){
         }
         
     });
+
+    apply_anti_AI.connect_clicked(move |_button: &Button| {
+        println!("modify btn clicked");
+        let strength: i16 = strength_slider.value() as i16;
+        println!("{}", strength);
+        let maybetext: Option<glib::GString> = AI_paste_button.tooltip_text();
+        let text: &str = match maybetext {
+            Some(formatted) => &formatted.clone(),
+            None => "ERROR_003",
+        };
+        if handle_error(text.to_string(), main_window4.clone()){
+            println!("lack of text")
+        }else{
+            let result = anti_ai_detection(&text, strength as i32-1, getAImode(AI_mode_buttons.clone()));
+            if handle_error(result.clone(), main_window4.clone()){
+                println!("Too Few words");
+            }else{
+                let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+                ctx.set_contents(result).unwrap();
+            }
+        }
+
+    });
+
     let output_title_clip2: Label = output_title_clip.clone();
     apply_button_clip.connect_clicked(move |_button: &Button|{
         if count_input_clip.text().to_string() != ""{
@@ -767,7 +819,7 @@ fn bootGUI(app: &Application){
         let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
         let text: &str = match output_title_clip2.tooltip_text() {
             Some(formatted) => &formatted.clone(),
-            None => "null",
+            None => "nothing yet",
         };
         if text == "nothing yet"{handle_error("ERROR_006".to_string(), main_window3.clone());}else{
             ctx.set_contents(text.to_owned()).unwrap();
