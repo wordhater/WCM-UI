@@ -7,6 +7,8 @@ use adw::{Application};
 use gtk::{glib, ApplicationWindow, Button, Box};
 use std::rc::Rc;
 use std::cell::{RefCell};
+use unicode_segmentation::UnicodeSegmentation;
+use rand::Rng;
 
 const APP_ID: &str = "org.gtk_rs.WCM_UI";
 
@@ -40,7 +42,6 @@ fn modulus_i32(a: i32, b: i32) -> bool{
 fn count_words_inc_increase(input: &str) -> i32 {
     let parts: std::str::Split<'_, &str> = input.split(" ");
     let mut count: i32 = 0;
-    let mut modlist: LinkedList<String> = LinkedList::new();
     for part in parts{
         for segment in part.split("\u{205f}"){
             count += 1;
@@ -89,6 +90,23 @@ fn getincmode(incbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>>) -> String{
     }
     return sel;
 }
+fn getAImode(AImode_btns:  Rc<RefCell<Vec<gtk::ToggleButton>>>) -> i8{
+    let mut sel: i8 = 0;
+    for button in AImode_btns.borrow().iter() {
+        if button.is_active(){
+            let label: &str = match button.label() {
+                Some(formatted) => &formatted.clone(),
+                None => "null",
+            };
+            // add extra modes here
+            if label == "Homoglyphs"{sel = 1;}
+            if label == "Word Merging"{sel = 2;}
+            if label == "Both(very effective)"{sel = 3;}
+            break
+        }
+    }
+    return sel;
+}
 
 // Error prompter
 
@@ -127,6 +145,12 @@ fn handle_error(code: String, window: gtk::ApplicationWindow) -> bool {
         return true;
     }else if code == "ERROR_005"{
         popup_error("\nUnable to access Clipboard".to_string(), window);
+        return true;
+    }else if code == "ERROR_006"{
+        popup_error("\nNo Processed Text to Copy".to_string(), window);
+        return true;
+    }else if code == "ERROR_007"{
+        popup_error("\nToo few words to process for word merging".to_string(), window);
         return true;
     }
     return false;
@@ -218,6 +242,68 @@ fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
     return input.to_string();
 }
 
+fn anti_ai_detection<'a>(input: &'a str, strength: i32, mode: i8) -> String{
+    // modes 1=homoglyphs, 2=homoglyphs+word merging, 3=word merging
+    let replacement: String = "\u{205f}".to_string();
+    let chars_from: Vec<&str> = vec!["a", "c", "d", "e", "h", "i", "j", "o", "p", "x", "y"];
+    let chars_to: Vec<&str> = vec!["\u{0430}","\u{0441}","\u{0501}","\u{0435}","\u{04bb}","\u{0456}","\u{0458}","\u{03bf}","\u{0440}","\u{0445}","\u{0443}"];
+    let length: i32 = input.graphemes(true).count() as i32;
+    println!("char count: {}", length);
+    let mut out = "".to_string();
+
+    if (mode == 1)|(mode == 3){
+        for segment in input.split(""){
+            println!("char: {}", segment);
+            if chars_from.contains(&segment){
+                if rand::thread_rng().gen_range(1..101) < strength{
+                    println!("replacing");
+                    let index: usize = chars_from.iter().position(|&r| r == segment).unwrap();
+                    out += chars_to[index];
+                }
+            }else{
+                out += segment;
+            }
+
+        }
+    }else{
+        out = input.to_string();
+    }
+    if(mode == 2)|(mode == 3){
+        let init_count: i32 = count_words(&out);
+        if init_count == 1{
+            return "ERROR_007".to_string();
+        }
+        let target: i32 = ((init_count as f32 /100.0)*(100 - strength) as f32).ceil() as i32;
+        let rate: i32 =  ((init_count as f32 -1.0)/(init_count-target) as f32).ceil() as i32;
+        let mut output = "".to_string();
+        let mut words:LinkedList<String> = LinkedList::new();
+        let parts: std::str::Split<'_, &str> = out.split(" ");
+        for part in parts{words.push_back(part.to_string());}
+        if target >= init_count/2 {
+            for i in 0..init_count{
+                output.push_str(&get_item_by_index_str(&words, i as usize));
+                if modulus_i32(i, rate){
+                    output.push_str(&replacement);
+                }else{
+                    output.push_str(" ");
+                }
+            }
+        }else{
+            let spacerate: i32 = (init_count -1)/(init_count - (init_count-target));
+            for i in 0..init_count{
+                output.push_str(&get_item_by_index_str(&words, i as usize));
+                if modulus_i32(i, spacerate) {
+                    output.push_str(" ");
+                }else {
+                    output.push_str(&replacement);
+                }
+            }
+        }
+        out = output
+    }
+    return out;
+}
+
 fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String, incmode: &'a String, window: gtk::ApplicationWindow) -> String {
     let init_count: i32 = count_words(input);
     if init_count > count{
@@ -239,7 +325,6 @@ fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String, incmod
 
 fn main()  -> glib::ExitCode {
     let app: Application = Application::builder().application_id(APP_ID).build();
-
     // Connect to "activate" signal of `app`
     app.connect_activate(bootGUI);
 
@@ -253,7 +338,7 @@ fn bootGUI(app: &Application){
         .orientation(gtk::Orientation::Vertical)
         .build();
 
-    // for some reason it errors if I create multiple instances on the same element in the view
+    // for some reason it errors if I create multiple instances on the same element in the view, there is no better way I can find to fix this mess
 
     let horizontal_separator_0 = gtk::Separator::builder()
         .margin_top(5)
@@ -322,12 +407,89 @@ fn bootGUI(app: &Application){
         .build();
     output_title.set_markup("<span font=\"15\"><b> </b></span>");
 
+    // Anti AI detection
+
+    let strength_slider = gtk::Scale::with_range(gtk::Orientation::Horizontal, 5.0, 100.0, 1.0);
+    strength_slider.set_draw_value(true);
+    strength_slider.set_width_request(300);
+    let strength_label = gtk::Label::builder()
+        .label("\nStrength:")
+        .build();
+    
+    let AI_left: Box = Box::new(gtk::Orientation::Vertical, 5);
+    AI_left.set_width_request(600);
+    let AI_right: Box = Box::new(gtk::Orientation::Vertical, 5);
+    AI_right.set_width_request(600);
+
+    let strengthrow: Box = Box::new(gtk::Orientation::Horizontal, 5);
+    
+    strengthrow.append(&strength_label);
+    strengthrow.append(&strength_slider);
+    strength_slider.set_value(80.0);
+
+    AI_left.append(&strengthrow);
+    AI_left.append(&gtk::Separator::builder().margin_top(12).margin_bottom(5).build());
+    
     // mode selection
+    
+    let mode_header = Label::builder().label("Modifications").build();
+    mode_header.set_halign(gtk::Align::Center);
+    AI_left.append(&mode_header);
+
+    let AI_mode_btn_0: gtk::ToggleButton = gtk::ToggleButton::builder()
+        .label("Homoglyphs")
+        .build();
+
+    let AI_mode_btn_1: gtk::ToggleButton = gtk::ToggleButton::builder()
+        .label("Word Merging")
+        .build();
+
+    let AI_mode_btn_2: gtk::ToggleButton = gtk::ToggleButton::builder()
+        .label("Both(very effective)")
+        .build();
+    AI_mode_btn_2.set_active(true);
+    let AI_mode_layout: Box = Box::new(gtk::Orientation::Vertical, 5);
+    AI_mode_layout.append(&AI_mode_btn_0);
+    AI_mode_layout.append(&AI_mode_btn_1);
+    AI_mode_layout.append(&AI_mode_btn_2);
+    
+    let AI_mode_group: gtk::ToggleButton = AI_mode_btn_0.clone().downcast::<gtk::ToggleButton>().unwrap();
+
+    AI_mode_btn_1.set_group(Some(&AI_mode_group));
+    AI_mode_btn_2.set_group(Some(&AI_mode_group));
+
+    let AI_mode_buttons: Rc<RefCell<Vec<gtk::ToggleButton>>> = Rc::new(RefCell::new(vec![AI_mode_btn_0.clone(), AI_mode_btn_1.clone(), AI_mode_btn_2.clone()]));
+
+    AI_left.append(&AI_mode_layout);
+    AI_mode_btn_2.set_active(true);
+
+    // paste button
+
+    let AI_paste_button: Button = Button::builder()
+        .label("Get Clipboard Contents")
+        .build();
+
+    AI_right.append(&AI_paste_button);
+
+    let AI_sucessindicator: Label = Label::builder()
+        .label("No loaded clipboard contents")
+        .tooltip_text("Click Get Clipboard Contents to get text")
+        .build();
+
+    AI_right.append(&AI_sucessindicator);
+    AI_right.append(&gtk::Separator::builder().margin_top(5).margin_bottom(5).build());
+
+    // apply
+    let apply_anti_AI: Button = Button::builder()
+        .label("Apply and Copy Changes")
+        .build();
+
+    AI_right.append(&apply_anti_AI);
 
 
     // char buttons
     let char_label: Label =  Label::builder()
-        .label("Char selection (SELECT ONLY ONE AT A TIME): ")
+        .label("Char selection: ")
         .build();
     let char_btn_0: gtk::ToggleButton = gtk::ToggleButton::builder()
         .label("U+205F")
@@ -397,8 +559,6 @@ fn bootGUI(app: &Application){
     incrow.append(&inc_btn_0);
     incrow.append(&inc_btn_1);
     incrow.append(&inc_btn_2);
-    
-    
 
     row1.append(&count_input_label);
     row1.append(&count_input);
@@ -414,14 +574,31 @@ fn bootGUI(app: &Application){
         .label("Clipboard")
         .build();
     let tab3_label: Label = Label::builder()
+        .label("Anti AI Detection tools")
+        .build();
+    let tab4_label: Label = Label::builder()
         .label("Settings")
         .build();
+
     let tab1_content: Box = Box::new(gtk::Orientation::Vertical, 5);
     let tab2_content: Box = Box::new(gtk::Orientation::Vertical, 5);
     let tab3_content: Box = Box::new(gtk::Orientation::Vertical, 5);
+    let tab4_content: Box = Box::new(gtk::Orientation::Vertical, 5);
+
+    // anti ai tab builder
+    
+    let tab4_column_container: Box = Box::new(gtk::Orientation::Horizontal, 5);
+    tab4_column_container.append(&AI_left);
+    tab4_column_container.append(&gtk::Separator::builder().orientation(gtk::Orientation::Vertical).build());
+    tab4_column_container.append(&AI_right);
+    
+    tab3_content.append(&tab4_column_container);
+    
+
+    // other builders
     gtk_box.append(&title);
-    tab3_content.append(&charrow);
-    tab3_content.append(&incrow);
+    tab4_content.append(&charrow);
+    tab4_content.append(&incrow);
 
     tab1_content.append(&input_text);
     tab1_content.append(&horizontal_separator_0);
@@ -485,6 +662,7 @@ fn bootGUI(app: &Application){
     tabs.append_page(&tab1_content, Some(&tab1_label));
     tabs.append_page(&tab2_content, Some(&tab2_label));
     tabs.append_page(&tab3_content, Some(&tab3_label));
+    tabs.append_page(&tab4_content, Some(&tab4_label));
 
     gtk_box.append(&tabs);
 
@@ -508,8 +686,9 @@ fn bootGUI(app: &Application){
                 println!("all numbers")
             }else{
                 println!("letters detected");
-                let mut output: String = text.to_string();
-                output.pop();
+                let mut chars: std::str::Chars<'_> = text.chars();
+                chars.next_back();
+                let output: &str = chars.as_str();
                 println!("{}", output);
                 _count_input.set_text(&output);
             }
@@ -519,7 +698,7 @@ fn bootGUI(app: &Application){
 
     let main_window: ApplicationWindow = gtk::ApplicationWindow::builder()
         .application(app)
-        .default_width(600)
+        .default_width(1200)
         .default_height(700)
         .child(&gtk_box)
         .title("WCM UI")
@@ -528,7 +707,7 @@ fn bootGUI(app: &Application){
     let sucessindicator2: Label = sucessindicator.clone();
     let main_window3: gtk::ApplicationWindow = main_window.clone();
     
-    getbtn.connect_clicked(move |_getbtn: &Button| {
+    let clip_btn_logic = move |_getbtn: &Button| {
         let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
         let potential_clipboardcontent: Result<String, std::prelude::v1::Box<dyn std::error::Error>> = ctx.get_contents();
         match potential_clipboardcontent {
@@ -538,24 +717,34 @@ fn bootGUI(app: &Application){
                 if content.to_string() == ""{
                     let _ = handle_error("ERROR_004".to_string(), main_window3.clone());
                 }else{
-                    sucessindicator.set_label(&format!("Clipboard contains {} words", clipcount));
-                    sucessindicator.set_tooltip_text(Some(&content));
+                    if tabs.current_page() == Some(1){
+                        sucessindicator.set_label(&format!("Clipboard contains {} words", clipcount));
+                    }else if tabs.current_page() == Some(2){
+                        AI_sucessindicator.set_label(&format!("Clipboard contains {} words", clipcount));
+                    }
+                    _getbtn.set_tooltip_text(Some(&content));
+                    
                 }
             }
             Err(error) => {
                 println!("Error getting clipboard content: {}", error);
                 let _ = handle_error("ERROR_005".to_string(), main_window3.clone());
-                sucessindicator.set_label("Error occurred when reading clipboard contents");
+                _getbtn.set_label("Error occurred when reading clipboard contents");
             }
         }
-    });
+    };
+    getbtn.connect_clicked(clip_btn_logic.clone());
+    AI_paste_button.connect_clicked(clip_btn_logic.clone());
 
 
-    
+    // cloning variables so I can reference them    
     let charbuttons2: Rc<RefCell<Vec<gtk::ToggleButton>>> = charbuttons.clone();
     let incbuttons2: Rc<RefCell<Vec<gtk::ToggleButton>>> = incbuttons.clone();
     let main_window1: gtk::ApplicationWindow = main_window.clone();
     let main_window2: gtk::ApplicationWindow = main_window.clone();
+    let main_window3: gtk::ApplicationWindow = main_window.clone();
+    let main_window4: gtk::ApplicationWindow = main_window.clone();
+
 
     apply_button.connect_clicked(move |_button: &Button| {
         println!("modify btn clicked");
@@ -582,6 +771,30 @@ fn bootGUI(app: &Application){
         }
         
     });
+
+    apply_anti_AI.connect_clicked(move |_button: &Button| {
+        println!("modify btn clicked");
+        let strength: i16 = strength_slider.value() as i16;
+        println!("{}", strength);
+        let maybetext: Option<glib::GString> = AI_paste_button.tooltip_text();
+        let text: &str = match maybetext {
+            Some(formatted) => &formatted.clone(),
+            None => "ERROR_003",
+        };
+        if handle_error(text.to_string(), main_window4.clone()){
+            println!("lack of text")
+        }else{
+            let result = anti_ai_detection(&text, strength as i32-1, getAImode(AI_mode_buttons.clone()));
+            if handle_error(result.clone(), main_window4.clone()){
+                println!("Too Few words");
+            }else{
+                let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+                ctx.set_contents(result).unwrap();
+            }
+        }
+
+    });
+
     let output_title_clip2: Label = output_title_clip.clone();
     apply_button_clip.connect_clicked(move |_button: &Button|{
         if count_input_clip.text().to_string() != ""{
@@ -589,7 +802,7 @@ fn bootGUI(app: &Application){
             if count_input_clip.text().to_string() != ""{
                 if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{let _ = handle_error("ERROR_002".to_string(), main_window2.clone());}else{
                     let selected: String = getcharmode(charbuttons2.clone());
-                    let result: &String = &modifywrapper(&sucessindicator2.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons2.clone()), main_window2.clone());
+                    let result: &String = &modifywrapper(&getbtn.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons2.clone()), main_window2.clone());
                     output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
                     output_title_clip.set_tooltip_text(Some(&result));
                 }
@@ -606,9 +819,12 @@ fn bootGUI(app: &Application){
         let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
         let text: &str = match output_title_clip2.tooltip_text() {
             Some(formatted) => &formatted.clone(),
-            None => "null",
+            None => "nothing yet",
         };
-        ctx.set_contents(text.to_owned()).unwrap();
+        if text == "nothing yet"{handle_error("ERROR_006".to_string(), main_window3.clone());}else{
+            ctx.set_contents(text.to_owned()).unwrap();
+        }
     });
+
     main_window.present();
 }
