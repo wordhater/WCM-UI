@@ -68,7 +68,7 @@ fn getcharmode(charbuttons:  Rc<RefCell<Vec<gtk::ToggleButton>>>) -> String{
             // add extra chars here
             if label == "U+205F"{sel = "\u{205f}".to_string();}
             if label == "U+2004"{sel = "\u{2004}".to_string();}
-            if label == "_"{sel = "_".to_string();}
+            if label == "Debug Mode"{sel = "_".to_string();}
             break
         }
     }
@@ -82,7 +82,7 @@ fn getincmode(incbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>>) -> String{
             Some(formatted) => &formatted.clone(),
             None => "null",
         };
-        if label == "Hidden (WIP)" {sel = "Hidden".to_string();}else{
+        if label == "Increase Mode v2" {sel = "Hidden".to_string();}else{
             sel = label.to_string();
         }
         break
@@ -101,7 +101,7 @@ fn getAImode(AImode_btns:  Rc<RefCell<Vec<gtk::ToggleButton>>>) -> i8{
             // add extra modes here
             if label == "Homoglyphs"{sel = 1;}
             if label == "Word Merging"{sel = 2;}
-            if label == "Both(very effective)"{sel = 3;}
+            if label == "Both (Very Effective)"{sel = 3;}
             break
         }
     }
@@ -144,13 +144,13 @@ fn handle_error(code: String, window: gtk::ApplicationWindow) -> bool {
         popup_error("\nInvalid Clipboard Contents".to_string(), window);
         return true;
     }else if code == "ERROR_005"{
-        popup_error("\nUnable to access Clipboard".to_string(), window);
+        popup_error("\nUnable to Access Clipboard".to_string(), window);
         return true;
     }else if code == "ERROR_006"{
         popup_error("\nNo Processed Text to Copy".to_string(), window);
         return true;
     }else if code == "ERROR_007"{
-        popup_error("\nToo few words to process for word merging".to_string(), window);
+        popup_error("\nNot Enought Words for Word Merging".to_string(), window);
         return true;
     }
     return false;
@@ -407,7 +407,7 @@ fn bootGUI(app: &Application){
         .build();
     output_title.set_markup("<span font=\"15\"><b> </b></span>");
 
-    // Anti AI detection
+    // Anti-AI detection
 
     let strength_slider = gtk::Scale::with_range(gtk::Orientation::Horizontal, 5.0, 100.0, 1.0);
     strength_slider.set_draw_value(true);
@@ -445,7 +445,7 @@ fn bootGUI(app: &Application){
         .build();
 
     let AI_mode_btn_2: gtk::ToggleButton = gtk::ToggleButton::builder()
-        .label("Both(very effective)")
+        .label("Both (Very Effective)")
         .build();
     AI_mode_btn_2.set_active(true);
     let AI_mode_layout: Box = Box::new(gtk::Orientation::Vertical, 5);
@@ -466,7 +466,7 @@ fn bootGUI(app: &Application){
     // paste button
 
     let AI_paste_button: Button = Button::builder()
-        .label("Get Clipboard Contents")
+        .label("Get clipboard contents")
         .build();
 
     AI_right.append(&AI_paste_button);
@@ -481,7 +481,7 @@ fn bootGUI(app: &Application){
 
     // apply
     let apply_anti_AI: Button = Button::builder()
-        .label("Apply and Copy Changes")
+        .label("Apply and copy changes")
         .build();
 
     AI_right.append(&apply_anti_AI);
@@ -489,18 +489,21 @@ fn bootGUI(app: &Application){
 
     // char buttons
     let char_label: Label =  Label::builder()
-        .label("Char selection: ")
+        .label("Character selection: ")
         .build();
     let char_btn_0: gtk::ToggleButton = gtk::ToggleButton::builder()
         .label("U+205F")
+        .tooltip_text("The default and most reliable way of modifying text length. Only switch this to 'U+2004' if it not working.")
         .build();
 
     let char_btn_1: gtk::ToggleButton = gtk::ToggleButton::builder()
         .label("U+2004")
+        .tooltip_text("For in-case 'U+205F' isn't working in modifying the word count correctly; only use if it is not working.")
         .build();
 
     let char_btn_2: gtk::ToggleButton = gtk::ToggleButton::builder()
-        .label("_")
+        .label("Debug Mode")
+        .tooltip_text("Makes use of underscores to more easily be able to identify bugs.")
         .build();
 
     let chargroup = char_btn_0.clone().downcast::<gtk::ToggleButton>().unwrap();
@@ -514,19 +517,23 @@ fn bootGUI(app: &Application){
     // Increase mode switch
 
     let inc_label: Label = Label::builder()
-        .label("Increase mode (Applies only when aiming for a higher word count):")
+        .label("Increase Mode:")
+        .tooltip_text("This setting is automatically turned on when a higher number is entered than what is in your clipboard/the text editor.")
         .build(); 
     
     let inc_btn_0: gtk::ToggleButton = gtk::ToggleButton::builder()
         .label("Before")
+        .tooltip_text("As 'Increase Mode' is a work in progress, this only changes whether it adds all the extra words at the very beginning or at the end of the text.")
         .build();
 
     let inc_btn_1: gtk::ToggleButton = gtk::ToggleButton::builder()
         .label("After")
+        .tooltip_text("As 'Increase Mode' is a work in progress, this only changes whether it adds all the extra words at the very beginning or at the end of the text.")
         .build();
 
     let inc_btn_2: gtk::ToggleButton = gtk::ToggleButton::builder()
-        .label("Hidden (WIP)")
+        .label("Increase Mode v2")
+        .tooltip_text("This setting does nothing for now.")
         .build();
 
     let incbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>> = Rc::new(RefCell::new(vec![inc_btn_0.clone(), inc_btn_1.clone(), inc_btn_2.clone()]));
@@ -574,7 +581,7 @@ fn bootGUI(app: &Application){
         .label("Clipboard")
         .build();
     let tab3_label: Label = Label::builder()
-        .label("Anti AI Detection tools")
+        .label("Anti-AI Detection Tools")
         .build();
     let tab4_label: Label = Label::builder()
         .label("Settings")
@@ -614,11 +621,11 @@ fn bootGUI(app: &Application){
     // Clipboard menu contents
 
     let getbtn: Button = Button::builder()
-        .label("Get clipboard contents")
+        .label("Get Clipboard Contents")
         .margin_top(10)
         .build();
     let sucessindicator: Label = Label::builder()
-        .label("No loaded clipboard contents")
+        .label("No loaded clipboard contents.")
         .tooltip_text("Click Get Clipboard Contents to get text")
         // .has_tooltip(false)
         .build();
@@ -633,7 +640,7 @@ fn bootGUI(app: &Application){
     let output_title_clip: Label = Label::builder()
         .label("Result:")
         .use_markup(true)
-        .tooltip_text("nothing yet")
+        .tooltip_text("Nothing yet.")
         .build();
 
     let copy_result_btn: gtk::Button = gtk::Button::builder()
@@ -819,9 +826,9 @@ fn bootGUI(app: &Application){
         let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
         let text: &str = match output_title_clip2.tooltip_text() {
             Some(formatted) => &formatted.clone(),
-            None => "nothing yet",
+            None => "Nothing yet.",
         };
-        if text == "nothing yet"{handle_error("ERROR_006".to_string(), main_window3.clone());}else{
+        if text == "Nothing yet."{handle_error("ERROR_006".to_string(), main_window3.clone());}else{
             ctx.set_contents(text.to_owned()).unwrap();
         }
     });
