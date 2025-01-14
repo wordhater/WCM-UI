@@ -445,7 +445,7 @@ fn bootGUI(app: &Application){
         .build();
 
     let AI_mode_btn_2: gtk::ToggleButton = gtk::ToggleButton::builder()
-        .label("Both(very effective)")
+        .label("Both (Very Effective)")
         .build();
     AI_mode_btn_2.set_active(true);
     let AI_mode_layout: Box = Box::new(gtk::Orientation::Vertical, 5);
@@ -698,8 +698,6 @@ fn bootGUI(app: &Application){
 
     let main_window: ApplicationWindow = gtk::ApplicationWindow::builder()
         .application(app)
-        .default_width(1200)
-        .default_height(700)
         .child(&gtk_box)
         .title("WCM UI")
         .build();
