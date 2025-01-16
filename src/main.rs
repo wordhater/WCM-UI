@@ -1,3 +1,4 @@
+use gtk::ffi::GtkSettings;
 use gtk::{Label};
 use gtk::{prelude::*};
 use std::collections::linked_list::Iter;
@@ -13,6 +14,11 @@ use rand::Rng;
 const APP_ID: &str = "org.gtk_rs.WCM_UI";
 
 // other functions
+
+fn loadsettings() -> Vec<i32> {
+    
+    return vec![]
+}
 
 fn get_item_by_index_str(list: &LinkedList<String>, index: usize) -> String {
     let mut iter: Iter<String> = list.iter();
@@ -570,6 +576,10 @@ fn bootGUI(app: &Application){
     row1.append(&count_input_label);
     row1.append(&count_input);
 
+    // theme switch
+    let theme_switch: gtk::Switch = gtk::Switch::new();
+
+    
     // tabs
 
     let tabs: gtk::Notebook = gtk::Notebook::builder().build();
@@ -606,6 +616,7 @@ fn bootGUI(app: &Application){
     gtk_box.append(&title);
     tab4_content.append(&charrow);
     tab4_content.append(&incrow);
+    tab4_content.append(&theme_switch);
 
     tab1_content.append(&input_text);
     tab1_content.append(&horizontal_separator_0);
@@ -832,6 +843,12 @@ fn bootGUI(app: &Application){
             ctx.set_contents(text.to_owned()).unwrap();
         }
     });
-
+    // theme_switch.connect_state_flags_changed(|switch, is_active| {
+    //     if is_active.contains(gtk::StateFlags::ACTIVE) { 
+    //         app.set_default("gtk-application-prefer-dark-theme"); // GTK 4 syntax
+    //     } else {
+    //         app.set_default("gtk-application-prefer-dark-theme"); // GTK 4 syntax
+    //     }
+    // });
     main_window.present();
 }
