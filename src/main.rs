@@ -1,13 +1,12 @@
 use gtk::ffi::GtkSettings;
 use gtk::{Label};
 use gtk::{prelude::*};
-use std::collections::linked_list::Iter;
-use std::{collections::LinkedList};
 use clipboard::{ClipboardProvider, ClipboardContext};
 use adw::{Application};
 use gtk::{glib, ApplicationWindow, Button, Box};
-use std::rc::Rc;
-use std::cell::{RefCell};
+use std::fs;
+use std::io::{self, Write};
+use std::{fs::File, rc::Rc, path::Path, collections::LinkedList, collections::linked_list::Iter, cell::RefCell};
 use unicode_segmentation::UnicodeSegmentation;
 use rand::Rng;
 
@@ -16,7 +15,25 @@ const APP_ID: &str = "org.gtk_rs.WCM_UI";
 // other functions
 
 fn loadsettings() -> Vec<i32> {
-    
+    let filepath: &Path = Path::new("./conf/settings");
+    let display: std::path::Display<'_> = filepath.display();
+    let mut new: bool = false;
+    let mut file: File = match File::open(&filepath) {
+        Err(why) => {new = true;
+        return vec![1];},
+        Ok(file) => file,
+    };
+    // settings format reference: a number for the settings index for each setting
+    // char, inc, str, mod
+    if new {
+        println!("config not found, setting settings to default");
+        let default: &str = "0_0_80_3";
+        let mut newfile: File = fs::File::create(filepath).expect("could not create file");
+        match newfile.write_all(default.as_bytes()) {
+            Err(why) => panic!("couldn't write to {}: {}", display, why),
+            Ok(_) => println!("successfully wrote to {}", display),
+        }
+    }
     return vec![]
 }
 
