@@ -5,7 +5,7 @@ use clipboard::{ClipboardProvider, ClipboardContext};
 use adw::{Application};
 use gtk::{glib, ApplicationWindow, Button, Box};
 use std::fs;
-use std::io::{self, Write};
+use std::io::{self, Read, Write};
 use std::{fs::File, rc::Rc, path::Path, collections::LinkedList, collections::linked_list::Iter, cell::RefCell};
 use unicode_segmentation::UnicodeSegmentation;
 use rand::Rng;
@@ -15,26 +15,47 @@ const APP_ID: &str = "org.gtk_rs.WCM_UI";
 // other functions
 
 fn loadsettings() -> Vec<i32> {
+    println!("loading settings");
     let filepath: &Path = Path::new("./conf/settings");
+    let _: Result<(), io::Error> = fs::create_dir_all("./conf");
+
     let display: std::path::Display<'_> = filepath.display();
     let mut new: bool = false;
     let mut file: File = match File::open(&filepath) {
-        Err(why) => {new = true;
-        return vec![1];},
+        Err(why) => {
+            println!("config not found, setting settings to default");
+            let default: &str = "0_0_80_3";
+            let mut newfile: File = fs::File::create(filepath).expect("could not create file");
+            match newfile.write_all(default.as_bytes()) {
+                Err(why) => panic!("couldn't write to {}: {}", display, why),
+                Ok(_) => println!("successfully wrote to {}", display),
+            }
+            let settings: Vec<i32> = vec![0, 0, 80, 3];
+            return settings;
+        },
         Ok(file) => file,
     };
+    println!("opened file");
     // settings format reference: a number for the settings index for each setting
     // char, inc, str, mod
-    if new {
-        println!("config not found, setting settings to default");
-        let default: &str = "0_0_80_3";
-        let mut newfile: File = fs::File::create(filepath).expect("could not create file");
-        match newfile.write_all(default.as_bytes()) {
-            Err(why) => panic!("couldn't write to {}: {}", display, why),
-            Ok(_) => println!("successfully wrote to {}", display),
+    let mut settings: Vec<i32> = Vec::new();
+
+    let mut settings_str: String = String::new();
+    match file.read_to_string(&mut settings_str){
+        Err(why) => panic!("couldn't read {}: {}", display, why),
+        Ok(_) => println!("{} contains:\n{}", display, settings_str),
+    }
+    // parse
+    let mut tmp_chars: String = "".to_string();
+    for char in settings_str.split("") {
+        if char == "_"{
+            settings.push(tmp_chars.parse().unwrap());
+            tmp_chars = "".to_string();
+        }else{
+            tmp_chars += char;
         }
     }
-    return vec![]
+    return settings;
 }
 
 fn get_item_by_index_str(list: &LinkedList<String>, index: usize) -> String {
@@ -356,6 +377,9 @@ fn main()  -> glib::ExitCode {
 }
 
 fn bootGUI(app: &Application){
+
+    // load settings
+    let settings: Vec<i32> = loadsettings();
 
     let gtk_box: Box = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
