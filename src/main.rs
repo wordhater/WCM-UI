@@ -24,13 +24,13 @@ fn loadsettings() -> Vec<i32> {
     let mut file: File = match File::open(&filepath) {
         Err(why) => {
             println!("config not found, setting settings to default");
-            let default: &str = "0_0_80_3";
+            let default: &str = "0_0_80_2";
             let mut newfile: File = fs::File::create(filepath).expect("could not create file");
             match newfile.write_all(default.as_bytes()) {
                 Err(why) => panic!("couldn't write to {}: {}", display, why),
                 Ok(_) => println!("successfully wrote to {}", display),
             }
-            let settings: Vec<i32> = vec![0, 0, 80, 3];
+            let settings: Vec<i32> = vec![0, 0, 80, 2];
             return settings;
         },
         Ok(file) => file,
@@ -55,6 +55,7 @@ fn loadsettings() -> Vec<i32> {
             tmp_chars += char;
         }
     }
+    settings.push(tmp_chars.parse().unwrap());
     return settings;
 }
 
@@ -472,7 +473,7 @@ fn bootGUI(app: &Application){
     
     strengthrow.append(&strength_label);
     strengthrow.append(&strength_slider);
-    strength_slider.set_value(80.0);
+    strength_slider.set_value(settings[2] as f64);
 
     AI_left.append(&strengthrow);
     AI_left.append(&gtk::Separator::builder().margin_top(12).margin_bottom(5).build());
@@ -508,8 +509,13 @@ fn bootGUI(app: &Application){
     let AI_mode_buttons: Rc<RefCell<Vec<gtk::ToggleButton>>> = Rc::new(RefCell::new(vec![AI_mode_btn_0.clone(), AI_mode_btn_1.clone(), AI_mode_btn_2.clone()]));
 
     AI_left.append(&AI_mode_layout);
-    AI_mode_btn_2.set_active(true);
-
+    if settings[3] == 0 {
+        AI_mode_btn_0.set_active(true);
+    }else if settings[3] == 1 {
+        AI_mode_btn_1.set_active(true);
+    }else if settings[3] == 2 {
+        AI_mode_btn_2.set_active(true);
+    }
     // paste button
 
     let AI_paste_button: Button = Button::builder()
@@ -553,13 +559,19 @@ fn bootGUI(app: &Application){
         .tooltip_text("Makes use of underscores to more easily be able to identify bugs.")
         .build();
 
-    let chargroup = char_btn_0.clone().downcast::<gtk::ToggleButton>().unwrap();
+    let chargroup: gtk::ToggleButton = char_btn_0.clone().downcast::<gtk::ToggleButton>().unwrap();
     
     char_btn_1.set_group(Some(&chargroup));
     char_btn_2.set_group(Some(&chargroup));
 
     let charbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>> = Rc::new(RefCell::new(vec![char_btn_0.clone(), char_btn_1.clone(), char_btn_2.clone()]));
-    char_btn_0.set_active(true);
+    if settings[0] == 0{
+        char_btn_0.set_active(true);
+    }else if settings[0] == 1 {
+        char_btn_1.set_active(true);
+    }else if settings[0] == 2 {
+        char_btn_2.set_active(true);
+    }
 
     // Increase mode switch
 
@@ -589,7 +601,13 @@ fn bootGUI(app: &Application){
     inc_btn_1.set_group(Some(&incgroup));
     inc_btn_2.set_group(Some(&incgroup));
 
-    inc_btn_0.set_active(true);
+    if settings[1] == 0{
+        inc_btn_0.set_active(true);
+    }else if settings[1] == 1 {
+        inc_btn_1.set_active(true);
+    }else if settings[1] == 2 {
+        inc_btn_2.set_active(true);
+    }
     // layouts
 
     let row1: Box = Box::new(gtk::Orientation::Horizontal, 5);
@@ -617,10 +635,6 @@ fn bootGUI(app: &Application){
     row1.append(&count_input_label);
     row1.append(&count_input);
 
-    // theme switch
-    let theme_switch: gtk::Switch = gtk::Switch::new();
-
-    
     // tabs
 
     let tabs: gtk::Notebook = gtk::Notebook::builder().build();
@@ -657,7 +671,6 @@ fn bootGUI(app: &Application){
     gtk_box.append(&title);
     tab4_content.append(&charrow);
     tab4_content.append(&incrow);
-    tab4_content.append(&theme_switch);
 
     tab1_content.append(&input_text);
     tab1_content.append(&horizontal_separator_0);
@@ -884,12 +897,6 @@ fn bootGUI(app: &Application){
             ctx.set_contents(text.to_owned()).unwrap();
         }
     });
-    // theme_switch.connect_state_flags_changed(|switch, is_active| {
-    //     if is_active.contains(gtk::StateFlags::ACTIVE) { 
-    //         app.set_default("gtk-application-prefer-dark-theme"); // GTK 4 syntax
-    //     } else {
-    //         app.set_default("gtk-application-prefer-dark-theme"); // GTK 4 syntax
-    //     }
-    // });
+
     main_window.present();
 }
