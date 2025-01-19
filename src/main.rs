@@ -1,4 +1,3 @@
-use gtk::ffi::GtkSettings;
 use gtk::{Label};
 use gtk::{prelude::*};
 use clipboard::{ClipboardProvider, ClipboardContext};
@@ -18,8 +17,8 @@ fn loadsettings() -> Vec<i32> {
     println!("loading settings");
     let filepath: &Path = Path::new("./conf/settings");
     let _: Result<(), io::Error> = fs::create_dir_all("./conf");
-
     let display: std::path::Display<'_> = filepath.display();
+
     let mut new: bool = false;
     let mut file: File = match File::open(&filepath) {
         Err(why) => {
@@ -120,15 +119,18 @@ fn getcharmode(charbuttons:  Rc<RefCell<Vec<gtk::ToggleButton>>>) -> String{
     return sel;
 }
 
-fn getincmode(incbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>>) -> String{
-    let mut sel: String = "".to_string();
+fn getincmode(incbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>>) -> i32{
+    let mut sel: i32 = 0;
     for button in incbuttons.borrow().iter(){if button.is_active(){
         let label: &str = match button.label() {
             Some(formatted) => &formatted.clone(),
             None => "null",
         };
-        if label == "Increase Mode v2" {sel = "Hidden".to_string();}else{
-            sel = label.to_string();
+        if label == "Increase Mode v2" {sel = 2;
+        }else if label == "Before"{
+            sel = 0;
+        }else if label == "After" {
+            sel = 1;
         }
         break
         }
@@ -238,7 +240,7 @@ fn decrease<'a>(input: &'a  str, goal: i32, replacement: &'a str) -> String{
 }
 
 // increase
-fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
+fn increase<'a>(input: &'a str, goal: i32, mode: i32) -> String {
     let incchar: String = "\u{2061}".to_string();
     let parts: std::str::Split<'_, &str> = input.split("");
     let charcount: i32 = input.len() as i32;
@@ -253,7 +255,7 @@ fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
     }
     let addition: i32 = goal-count_words(input);
     // hidden mode
-    if mode == "Hidden"{
+    if mode == 2{
         if addition > charlist.len() as i32{return "ERROR_001".to_string();}else{
             let rate: f64 = charlist.len() as f64/addition as f64;
             let mut output: String = String::new();
@@ -267,7 +269,7 @@ fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
             }
             return output;
         }
-    } else if mode == "Before" {
+    } else if mode == 0 {
         let mut output: String = "".to_string();
         for i in 1..addition{
             output.push_str("\u{3164} ");
@@ -275,7 +277,7 @@ fn increase<'a>(input: &'a str, goal: i32, mode: &'a str) -> String {
         output.push_str("\u{000D}");
         output.push_str(&input);
         return output;
-    }else if mode == "After"{
+    }else if mode == 1{
         let mut output: String = "".to_string();
         output.push_str(&input);
         output.push_str("\u{000D}");
@@ -349,14 +351,14 @@ fn anti_ai_detection<'a>(input: &'a str, strength: i32, mode: i8) -> String{
     return out;
 }
 
-fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String, incmode: &'a String, window: gtk::ApplicationWindow) -> String {
+fn modifywrapper<'a>(input: &'a str, count: i32, replacement: &'a String, incmode: i32, window: gtk::ApplicationWindow) -> String {
     let init_count: i32 = count_words(input);
     if init_count > count{
         println!("Decrease requested");
         return decrease(input, count, replacement);
     }else if init_count < count {
         println!("increase requested");
-        let output: String = increase(input, count, &incmode);
+        let output: String = increase(input, count, incmode);
         if handle_error(output.clone(), window){
             return "An Error occured".to_owned()
         }else{
@@ -474,6 +476,7 @@ fn bootGUI(app: &Application){
     strengthrow.append(&strength_label);
     strengthrow.append(&strength_slider);
     strength_slider.set_value(settings[2] as f64);
+    let strength_slider2: gtk::Scale = strength_slider.clone();
 
     AI_left.append(&strengthrow);
     AI_left.append(&gtk::Separator::builder().margin_top(12).margin_bottom(5).build());
@@ -608,6 +611,10 @@ fn bootGUI(app: &Application){
     }else if settings[1] == 2 {
         inc_btn_2.set_active(true);
     }
+    // save settings button
+    let savebtn: Button = Button::builder()
+        .label("Save current settings as default")
+        .build();
     // layouts
 
     let row1: Box = Box::new(gtk::Orientation::Horizontal, 5);
@@ -671,6 +678,7 @@ fn bootGUI(app: &Application){
     gtk_box.append(&title);
     tab4_content.append(&charrow);
     tab4_content.append(&incrow);
+    tab4_content.append(&savebtn);
 
     tab1_content.append(&input_text);
     tab1_content.append(&horizontal_separator_0);
@@ -811,7 +819,10 @@ fn bootGUI(app: &Application){
 
     // cloning variables so I can reference them    
     let charbuttons2: Rc<RefCell<Vec<gtk::ToggleButton>>> = charbuttons.clone();
+    let charbuttons3: Rc<RefCell<Vec<gtk::ToggleButton>>> = charbuttons.clone();
     let incbuttons2: Rc<RefCell<Vec<gtk::ToggleButton>>> = incbuttons.clone();
+    let incbuttons3: Rc<RefCell<Vec<gtk::ToggleButton>>> = incbuttons.clone();
+    let AI_mode_buttons2: Rc<RefCell<Vec<gtk::ToggleButton>>> = AI_mode_buttons.clone();
     let main_window1: gtk::ApplicationWindow = main_window.clone();
     let main_window2: gtk::ApplicationWindow = main_window.clone();
     let main_window3: gtk::ApplicationWindow = main_window.clone();
@@ -829,7 +840,7 @@ fn bootGUI(app: &Application){
                     if (input_text.text().to_string().len() as i32 == 0) | (count_input.text().to_string().len() as i32 == 0){
                         println!("no text")
                     }else{
-                        let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons.clone()), main_window1.clone());
+                        let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected, getincmode(incbuttons.clone()), main_window1.clone());
                         let markup: String = format!("{}", result);
                         output.buffer().set_text(&markup);
                         output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
@@ -874,7 +885,7 @@ fn bootGUI(app: &Application){
             if count_input_clip.text().to_string() != ""{
                 if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{let _ = handle_error("ERROR_002".to_string(), main_window2.clone());}else{
                     let selected: String = getcharmode(charbuttons2.clone());
-                    let result: &String = &modifywrapper(&getbtn.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, &getincmode(incbuttons2.clone()), main_window2.clone());
+                    let result: &String = &modifywrapper(&getbtn.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, getincmode(incbuttons2.clone()), main_window2.clone());
                     output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
                     output_title_clip.set_tooltip_text(Some(&result));
                 }
@@ -887,7 +898,7 @@ fn bootGUI(app: &Application){
     });
 
     // copy btn
-    copy_result_btn.connect_clicked(move |_btn|{
+    copy_result_btn.connect_clicked(move |_btn: &Button|{
         let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
         let text: &str = match output_title_clip2.tooltip_text() {
             Some(formatted) => &formatted.clone(),
@@ -895,6 +906,36 @@ fn bootGUI(app: &Application){
         };
         if text == "Nothing yet."{handle_error("ERROR_006".to_string(), main_window3.clone());}else{
             ctx.set_contents(text.to_owned()).unwrap();
+        }
+    });
+    savebtn.connect_clicked(move |_btn: &Button| {
+        println!("saving setings");
+        // charbtns
+        let charmode: String = getcharmode(charbuttons3.clone());
+        let mut charindex: i32 = 0;
+        if charmode == "\u{205f}".to_string(){
+            charindex = 0;
+        }else if charmode == "\u{2004}".to_string() {
+            charindex = 1;
+        }else if charmode == "_".to_string() {
+            charindex = 2;
+        }
+
+        // increase mode
+        let incmode: i32 = getincmode(incbuttons3.clone());
+        // strength
+        let strength: i32 = strength_slider2.value().ceil() as i32;
+        let AI: i32 = getAImode(AI_mode_buttons2.clone()) as i32 -1;
+        let content: String = format!("{}_{}_{}_{}", charindex, incmode, strength, AI);
+        println!("content: {}", content);
+        
+        let filepath: &Path = Path::new("./conf/settings");
+        let _: Result<(), io::Error> = fs::create_dir_all("./conf");
+        let display: std::path::Display<'_> = filepath.display();
+        let mut newfile: File = fs::File::create(filepath).expect("could not create file");
+        match newfile.write_all(content.as_bytes()) {
+            Err(why) => panic!("couldn't write to {}: {}", display, why),
+            Ok(_) => println!("successfully wrote to {}", display),
         }
     });
 
