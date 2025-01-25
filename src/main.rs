@@ -87,8 +87,10 @@ fn count_words_inc_increase(input: &str) -> i32 {
     let parts: std::str::Split<'_, &str> = input.split(" ");
     let mut count: i32 = 0;
     for part in parts{
-        for segment in part.split("\u{205f}"){
-            count += 1;
+        for s1 in part.split("\u{205f}"){
+            for s2 in s1.split("\u{3164}"){
+                count += 1;
+            }
         }
     }
     return count;
@@ -251,19 +253,22 @@ fn increase<'a>(input: &'a str, goal: i32, mode: i32) -> String {
             charlist.push_back(part.to_string());
         }}
         index += 1;
-
     }
     let addition: i32 = goal-count_words(input);
     // hidden mode
     if mode == 2{
-        if addition > charlist.len() as i32{return "ERROR_001".to_string();}else{
-            let rate: f64 = charlist.len() as f64/addition as f64;
+        if addition > count_words(&input) as i32{return "ERROR_001".to_string();}else{
+            let rate: i32 = (count_words(&input)/addition) as i32;
             let mut output: String = String::new();
+            let parts: std::str::Split<'_, &str> = input.split(" ");
+            let mut words:LinkedList<String> = LinkedList::new();
+            for part in parts{words.push_back(part.to_string());}
             index = 0;
-            for char in charlist{
-                output.push_str(&char);
-                if index % rate as i32 == 0{
-                    output.push_str(&"\u{2061}");
+            for word in words{
+                output.push_str(&word);
+                if modulus_i32(index, rate){
+                    println!("char");
+                    output.push_str(&"\u{3164}");
                 }
                 index += 1
             }
@@ -676,6 +681,7 @@ fn bootGUI(app: &Application){
 
     // other builders
     gtk_box.append(&title);
+    tab4_content.append(&gtk::Label::builder().label("<b>Hover over settings to view more details</b>").use_markup(true).build());
     tab4_content.append(&charrow);
     tab4_content.append(&incrow);
     tab4_content.append(&savebtn);
