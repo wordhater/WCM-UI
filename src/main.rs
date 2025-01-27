@@ -1,7 +1,9 @@
+#![windows_subsystem = "windows"]
+
 use gtk::{Label};
 use gtk::{prelude::*};
 use clipboard::{ClipboardProvider, ClipboardContext};
-use adw::{Application};
+use gtk::{Application};
 use gtk::{glib, ApplicationWindow, Button, Box};
 use std::fs;
 use std::io::{self, Read, Write};
@@ -600,7 +602,7 @@ fn bootGUI(app: &Application){
 
     let inc_btn_2: gtk::ToggleButton = gtk::ToggleButton::builder()
         .label("Increase Mode v2")
-        .tooltip_text("This setting does nothing for now.")
+        .tooltip_text("This setting makes use of a mostly untested character, however keeps the changes within the text content, Check the text before submitting")
         .build();
 
     let incbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>> = Rc::new(RefCell::new(vec![inc_btn_0.clone(), inc_btn_1.clone(), inc_btn_2.clone()]));
