@@ -271,6 +271,8 @@ fn increase<'a>(input: &'a str, goal: i32, mode: i32) -> String {
                 if modulus_i32(index, rate){
                     println!("char");
                     output.push_str(&"\u{3164}");
+                }else{
+                    output.push_str(&"  ");
                 }
                 index += 1
             }

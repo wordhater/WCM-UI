@@ -26,14 +26,14 @@ Refer to the [windows branch](https://github.com/wordhater/WCM-UI/tree/windows) 
 
 ### Dependencies
 
-libadwaita V-1.5
-
 gtk4 V-4.12
 
 clipboard V0.5.0
 
+unicode-segmentation V1.12.0
+
 ```bash
-cargo build
+cargo build --release
 ```
 
 [Additional notes for building for/on windows](https://gtk-rs.org/gtk4-rs/stable/latest/book/installation_windows.html)
