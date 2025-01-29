@@ -312,7 +312,6 @@ fn anti_ai_detection<'a>(input: &'a str, strength: i32, mode: i8) -> String{
             println!("char: {}", segment);
             if chars_from.contains(&segment){
                 if rand::thread_rng().gen_range(1..101) < strength{
-                    println!("replacing");
                     let index: usize = chars_from.iter().position(|&r| r == segment).unwrap();
                     out += chars_to[index];
                 }
@@ -853,7 +852,7 @@ fn bootGUI(app: &Application){
                         let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected, getincmode(incbuttons.clone()), main_window1.clone());
                         let markup: String = format!("{}", result);
                         output.buffer().set_text(&markup);
-                        output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
+                        output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words_inc_increase(result)));
                     }
                 }
             }else{
@@ -896,7 +895,7 @@ fn bootGUI(app: &Application){
                 if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{let _ = handle_error("ERROR_002".to_string(), main_window2.clone());}else{
                     let selected: String = getcharmode(charbuttons2.clone());
                     let result: &String = &modifywrapper(&getbtn.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, getincmode(incbuttons2.clone()), main_window2.clone());
-                    output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
+                    output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words_inc_increase(result)));
                     output_title_clip.set_tooltip_text(Some(&result));
                 }
             }else{

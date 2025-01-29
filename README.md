@@ -4,19 +4,19 @@ A Graphical user interface for Word count modifier, a script used to reduce to d
 
 ## Tested programs
 
-these results are for U+205F other charecters tend to be less consistent, showing up as spelling errors or not working.
+these results are for U+205F other characters tend to be less consistent, showing up as spelling errors or not working.
 
 Word - Windows: ✅
 
 Word - MacOS: ✅ (limited testing)
 
-Word - Web: ❎ (I don't think the charecters even paste)
+Word - Web: ❎ (I don't think the characters even paste)
 
 Onlyoffice Desktop Editors: ❎ (Shows up with red underline but does affect the word count correctly)
 
 Turnitin: ✅ (Works fine from the limited testing I'm able to do)
 
-Qlearn/[Canvas Based Sites](https://www.instructure.com/canvas): ✅
+[Qlearn/Canvas Based Sites](https://www.instructure.com/canvas): ✅
 
 LibreOffice - Linux: ❎
 
