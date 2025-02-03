@@ -4,21 +4,37 @@ A Graphical user interface for Word count modifier, a script used to reduce to d
 
 ## Tested programs
 
-these results are for U+205F other characters tend to be less consistent, showing up as spelling errors or not working.
+### U+205F - Default Reduction Mode
 
 Word - Windows: ✅
 
 Word - MacOS: ✅ (limited testing)
 
-Word - Web: ❎ (I don't think the characters even paste)
+Word - Web: ❌ (I don't think the characters paste. However it should work when opening an existing file)
 
-Onlyoffice Desktop Editors: ❎ (Shows up with red underline but does affect the word count correctly)
+Onlyoffice Desktop Editors: ❌ (Shows up with red underline but does affect the word count correctly)
 
 Turnitin: ✅ (Works fine from the limited testing I'm able to do)
 
 [Qlearn/Canvas Based Sites](https://www.instructure.com/canvas): ✅
 
-LibreOffice - Linux: ❎
+LibreOffice - Linux: ❌
+
+### U+3164 - Increasing Word Count
+
+Word - Windows: ✅
+
+Word - MacOS: (Untested)
+
+Word - Web: ✅ (It works but word online seems to remove the charecters if you paste directly)
+
+OnlyOffice Desktop Editors: ❌/✅ (Does not count any form of increase on V2 however other modes seem to still work)
+
+Turnitin: (Untested)
+
+[Qlearn/Canvas based sites](https://www.instructure.com/canvas): ✅ (Limited testing however should work)
+
+Libreoffice: Linux: ✅ (seems to work perfectly)
 
 ## Building (On Linux)
 

@@ -95,6 +95,7 @@ fn count_words_inc_increase(input: &str) -> i32 {
             }
         }
     }
+    count += input.chars().filter(|c| *c == '\u{3164}').count() as i32;
     return count;
 }
 
@@ -266,8 +267,9 @@ fn increase<'a>(input: &'a str, goal: i32, mode: i32) -> String {
             let mut words:LinkedList<String> = LinkedList::new();
             for part in parts{words.push_back(part.to_string());}
             index = 0;
-            for word in words{
+            for word in words.clone(){
                 output.push_str(&word);
+                if index == words.len() as i32 -1 {break}
                 if modulus_i32(index, rate){
                     println!("char");
                     output.push_str(&"\u{3164}");
@@ -793,7 +795,6 @@ fn bootGUI(app: &Application){
         .title("WCM UI")
         .build();
 
-    let sucessindicator2: Label = sucessindicator.clone();
     let main_window3: gtk::ApplicationWindow = main_window.clone();
     
     let clip_btn_logic = move |_getbtn: &Button| {
