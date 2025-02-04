@@ -1,7 +1,9 @@
+#![windows_subsystem = "windows"]
+
 use gtk::{Label};
 use gtk::{prelude::*};
 use clipboard::{ClipboardProvider, ClipboardContext};
-use adw::{Application};
+use gtk::{Application};
 use gtk::{glib, ApplicationWindow, Button, Box};
 use std::fs;
 use std::io::{self, Read, Write};
@@ -87,10 +89,13 @@ fn count_words_inc_increase(input: &str) -> i32 {
     let parts: std::str::Split<'_, &str> = input.split(" ");
     let mut count: i32 = 0;
     for part in parts{
-        for segment in part.split("\u{205f}"){
-            count += 1;
+        for s1 in part.split("\u{205f}"){
+            for s2 in s1.split("\u{3164}"){
+                count += 1;
+            }
         }
     }
+    count += input.chars().filter(|c| *c == '\u{3164}').count() as i32;
     return count;
 }
 
@@ -251,19 +256,25 @@ fn increase<'a>(input: &'a str, goal: i32, mode: i32) -> String {
             charlist.push_back(part.to_string());
         }}
         index += 1;
-
     }
     let addition: i32 = goal-count_words(input);
     // hidden mode
     if mode == 2{
-        if addition > charlist.len() as i32{return "ERROR_001".to_string();}else{
-            let rate: f64 = charlist.len() as f64/addition as f64;
+        if addition > count_words(&input) as i32{return "ERROR_001".to_string();}else{
+            let rate: i32 = (count_words(&input)/addition) as i32;
             let mut output: String = String::new();
+            let parts: std::str::Split<'_, &str> = input.split(" ");
+            let mut words:LinkedList<String> = LinkedList::new();
+            for part in parts{words.push_back(part.to_string());}
             index = 0;
-            for char in charlist{
-                output.push_str(&char);
-                if index % rate as i32 == 0{
-                    output.push_str(&"\u{2061}");
+            for word in words.clone(){
+                output.push_str(&word);
+                if index == words.len() as i32 -1 {break}
+                if modulus_i32(index, rate){
+                    println!("char");
+                    output.push_str(&"\u{3164}");
+                }else{
+                    output.push_str(&"  ");
                 }
                 index += 1
             }
@@ -303,7 +314,6 @@ fn anti_ai_detection<'a>(input: &'a str, strength: i32, mode: i8) -> String{
             println!("char: {}", segment);
             if chars_from.contains(&segment){
                 if rand::thread_rng().gen_range(1..101) < strength{
-                    println!("replacing");
                     let index: usize = chars_from.iter().position(|&r| r == segment).unwrap();
                     out += chars_to[index];
                 }
@@ -595,7 +605,7 @@ fn bootGUI(app: &Application){
 
     let inc_btn_2: gtk::ToggleButton = gtk::ToggleButton::builder()
         .label("Increase Mode v2")
-        .tooltip_text("This setting does nothing for now.")
+        .tooltip_text("This setting makes use of a mostly untested character, however keeps the changes within the text content, Check the text before submitting")
         .build();
 
     let incbuttons: Rc<RefCell<Vec<gtk::ToggleButton>>> = Rc::new(RefCell::new(vec![inc_btn_0.clone(), inc_btn_1.clone(), inc_btn_2.clone()]));
@@ -676,6 +686,7 @@ fn bootGUI(app: &Application){
 
     // other builders
     gtk_box.append(&title);
+    tab4_content.append(&gtk::Label::builder().label("<b>Hover over settings to view more details</b>").use_markup(true).build());
     tab4_content.append(&charrow);
     tab4_content.append(&incrow);
     tab4_content.append(&savebtn);
@@ -784,7 +795,6 @@ fn bootGUI(app: &Application){
         .title("WCM UI")
         .build();
 
-    let sucessindicator2: Label = sucessindicator.clone();
     let main_window3: gtk::ApplicationWindow = main_window.clone();
     
     let clip_btn_logic = move |_getbtn: &Button| {
@@ -843,7 +853,7 @@ fn bootGUI(app: &Application){
                         let result: &String = &modifywrapper(&input_text.text().to_string(), count_input.text().parse::<i32>().unwrap() as i32, &selected, getincmode(incbuttons.clone()), main_window1.clone());
                         let markup: String = format!("{}", result);
                         output.buffer().set_text(&markup);
-                        output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
+                        output_title.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words_inc_increase(result)));
                     }
                 }
             }else{
@@ -886,7 +896,7 @@ fn bootGUI(app: &Application){
                 if count_input_clip.text().parse::<i32>().unwrap() as i32 == 0{let _ = handle_error("ERROR_002".to_string(), main_window2.clone());}else{
                     let selected: String = getcharmode(charbuttons2.clone());
                     let result: &String = &modifywrapper(&getbtn.tooltip_text().unwrap(), count_input_clip.text().parse::<i32>().unwrap() as i32, &selected, getincmode(incbuttons2.clone()), main_window2.clone());
-                    output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words(result)));
+                    output_title_clip.set_markup(&format!("<span font=\"15\"><b>Result: {} words</b></span>", count_words_inc_increase(result)));
                     output_title_clip.set_tooltip_text(Some(&result));
                 }
             }else{
