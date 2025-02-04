@@ -36,9 +36,7 @@ Turnitin: (Untested)
 
 Libreoffice: Linux: ✅ (seems to work perfectly)
 
-## Building (On Linux)
-
-Refer to the [windows branch](https://github.com/wordhater/WCM-UI/tree/windows) for information on building the windows version of the script
+## Building
 
 ### Dependencies
 
@@ -48,14 +46,26 @@ clipboard V0.5.0
 
 unicode-segmentation V1.12.0
 
+### Linux
+
 ```bash
+git clone https://github.com/wordhater/WCM-UI
+cd WCM-UI
 cargo build --release
 ```
 
-[Additional notes for building for/on windows](https://gtk-rs.org/gtk4-rs/stable/latest/book/installation_windows.html)
+### Windows
 
-## Known Issues
+Ensure rust/cargo is installed and functional.
 
-reduction algorithms don't make use of floats reducing accuracy on larger pieces of text
+[Additional notes for building for/on windows - 1](https://www.gtk.org/docs/installations/windows/)
 
-under seemingly random circumstances the code will return an unchanged word count or a word count of 0
+[Additional notes for building for/on windows - 2](https://gtk-rs.org/gtk4-rs/stable/latest/book/installation_windows.html)
+
+```bash
+git clone https://github.com/wordhater/WCM-UI
+cd WCM-UI
+cargo build --release
+```
+
+Check the 'target' folder for builds
