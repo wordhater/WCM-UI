@@ -89,11 +89,9 @@ fn count_words_inc_increase(input: &str) -> i32 {
     let parts: std::str::Split<'_, &str> = input.split(" ");
     let mut count: i32 = 0;
     for part in parts{
-        for s1 in part.split("\u{205f}"){
-            for s2 in s1.split("\u{3164}"){
+            for s2 in part.split("\u{3164}"){
                 count += 1;
             }
-        }
     }
     count += input.chars().filter(|c| *c == '\u{3164}').count() as i32;
     return count;
@@ -477,9 +475,9 @@ fn bootGUI(app: &Application){
         .build();
     
     let AI_left: Box = Box::new(gtk::Orientation::Vertical, 5);
-    AI_left.set_width_request(600);
+    AI_left.set_width_request(300);
     let AI_right: Box = Box::new(gtk::Orientation::Vertical, 5);
-    AI_right.set_width_request(600);
+    AI_right.set_width_request(300);
 
     let strengthrow: Box = Box::new(gtk::Orientation::Horizontal, 5);
     
@@ -789,8 +787,8 @@ fn bootGUI(app: &Application){
 
     let main_window: ApplicationWindow = gtk::ApplicationWindow::builder()
         .application(app)
-        .default_width(1200)
-        .default_height(700)
+        // .default_width(1200)
+        // .default_height(700)
         .child(&gtk_box)
         .title("WCM UI")
         .build();
